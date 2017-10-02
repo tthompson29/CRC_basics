@@ -1,0 +1,324 @@
+---
+ title: "CRC work"
+ author: "Taylor"
+ date: "9/22/2017"
+ output: html_document
+ ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("rmarkdown")
+library(rmarkdown)
+source(BiocLite)
+install.packages("genelib")
+library(genefilter)
+install.packages("genefilter")
+options(stringsAsFactors = FALSE)
+```
+
+## R Markdown
+ This is the basic file format for the for loop I will be runnin g on each table the make sure that there is a 
+  files <- list.files(path="path/t", pattern="*.txt", full.names=T, recursive=FALSE)
+  lapply(files, function(x) {
+    t <- read.table(x, header=F) # load file
+    # apply function
+   
+    out <- function(t)
+      # write to file
+      write.table(out, "path/to/output", sep="\t", quote=F, row.names=F, col.names=T)
+  })
+#Begin work here
+The first thing was to create a list of all the genes mutated in a specific pattern
+Started with samples passed by Somatic Mutation caller using MuTect_2
+Then greped each file for the SNV mutations
+after that seperated for impact from High to low or Modifier
+```{r}
+files <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVHIGH.txt", full.names=T, recursive=FALSE)
+  lapply(files, function(x){
+  # print(basename)
+    filename <- x
+    #basename <- gsub(".*/Volumes/home/greally-lab/T_Trial/Tables/", "", filename)
+    #colnames(y) <-("counts", basename)
+    if(file.size(x)>0){
+        t <- read.table(x, header=F)
+      blue_genes <-as.vector(t$V2) 
+      out <- blue_genes[!duplicated(blue_genes)]
+      print(blue_genes)
+      write.table(out, "out_snvh.txt", append = TRUE, sep="\t", na ="NA", quote=F, col.names= tools::file_path_sans_ext(basename(filename)))
+        }
+    })
+```
+#Create genelist from input information
+```{r}
+butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_3.txt", header = F)
+#butt_3 <- read.delim("out_snvh.txt", header = F)
+genes <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+genelist <- as.matrix(sort(genes))
+#removed the first empty row
+genelist <- as.matrix(sort(genes[2:length(genes)]))
+colnames(genelist) <- c("GENES")
+View(genelist)
+write.csv(genelist, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.csv")
+saveRDS(file, file = "/Volumes/home/greally-lab/T_Trial/Tables/file.Rds")
+saveRDS(genelist, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+```
+#for each file read in the file, loop for column 2 in genelist, if the names match output file column 1, else output 0
+SNVHigh Pass is the test directory
+Repeat the code for all other modifier patterns
+
+```{r}
+#first atttempt Code 
+files <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVHIGH.txt", full.names=T, recursive=FALSE)
+  
+    #set table once then run it
+genelist_snvh <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+        #snv_table_f <-as.data.frame(genelist)
+        #snvh_temp <- as.data.frame(cbind(genelist,0))
+col<- length(files)
+ro <- length(genelist_snvh)
+    snvh_list <- data.frame()
+    snvh_table <- data.frame(nrow = ro,ncol = col)
+    tab<- matrix(nrow = ro, ncol = 1)
+    #snvh_tab is a table that will be changed each time I should define it out of the bounds of the loop
+snvh_tab <- as.data.frame(rep(0,ro), row.names =genelist_snvh) 
+    
+ 
+    base <- list()
+    #named <- list()
+    # tried doing a for loop instead of lapply
+  for(j in 1:length(toy)){
+    # This is doing hte same thing it was doing when I put it at the end. It goes 1, then ,1,2, then 1,2,3 instead of 1. 2. 3. 
+      fil <- toy[j]
+      #creating variables to include the names of each patient along with each table read in. If not I can make this a vectore for later table naming
+      base[j] <- tools::file_path_sans_ext(basename(fil))
+      named[j] <- c("counts",base[j])
+      #if the file is larger than 0 read in the file as a table with 2 columns, column 1 is the counts, column 2(V2) are the gene names
+        if (file.size(fil)>0){
+          tab <- read.table(fil, header=F)
+          View(tab)
+          print(paste0(base,"is greater than 0"))
+          #Check to see which are greater than 0
+            gene<-tab$V2
+            counts<-tab$V1
+            #Checkpoint to print out genes and counts for each
+            print(gene)
+            print(counts)
+            #created a temparary column that was full of zeros
+            #created temporary table for matching
+        }
+  }
+            temp_col <- as.data.frame(rep(0,6645))
+            snvh_temp <-cbind(genelist_snvh,0)
+                for (i in 1:length(gene)){
+                  match <- charmatch(gene[i],genelist)
+                  print(match)
+                  snvh_temp[match,2] <- counts[i]
+                }
+            temp_col <- snvh_temp[,2]
+              #temp_col[match] <- counts[i]
+              #View(temp_col)
+            snvh_tab <- merge(snvh_tab,temp_col)
+            View(snvh_tab)
+        }
+      else{
+      #otherwise temp-col should just be a bunch of zeros
+      temp_col <- as.data.frame(rep(0,6645))
+      snvh_tab <- merge(snvh_tab,temp_col) 
+      #}
+      }
+  }
+```
+
+```{r}
+files_snvh <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVHIGH.txt", full.names=T, recursive=FALSE)
+toy_2 <- files[1:10]
+ten <- files[10]
+options(stringsAsFactors = FALSE)
+genelist_snvh <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+snvh_tab <- as.data.frame(rep(0,ro), row.names =genelist_snvh)
+#defining Temp outside of the function to prevent it's repeated emptying
+temp <- genelist_snvh
+snvh_tabl <- temp
+for (i in 1:length(files_snvh)) {
+  x<- files_snvh[i]
+  base <- tools::file_path_sans_ext(basename(x))
+  named <- c(base,"genes")
+   if (file.size(x)>0){
+    #print(named)
+    #save each table as a rds then red it back in as a dataframe with column names
+    mini_table <- read.table(x, header =FALSE)
+    colnames(mini_table) <- named
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
+    column[is.na(column)] <- 0
+    #saveRDS(column,file = "/Volumes/home/greally-lab/T_Trial/Work/")
+    #write.table(column,file = "/Volumes/home/greally-lab/T_Trial/Work/columns_3.txt", sep = "\t", append = TRUE, col.names = TRUE)
+    snvh_tabl <- merge(snvh_tabl, column, by="GENES", all=TRUE)
+}
+  else{
+    empty_table <- cbind(rep(0,nrow(temp)), temp)
+    #head(empty_table)
+    colnames(empty_table)<-named
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all = TRUE)
+    #View(column)
+    #write.table(column, file = "/Volumes/home/greally-lab/T_Trial/Work/columns_3.txt", sep = "\t", append = TRUE, col.names = TRUE)
+    snvh_tabl <- merge(snvh_tabl, column, by="GENES", all=TRUE)
+  #View(snvh_tabl)
+  }
+}
+saveRDS(snvh_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
+head(snvh_tabl, 10)
+#check that the second pt column has 11 1s in it
+sum(as.numeric(as.character(snvh_tabl[,3])))
+#check that the 1s are in the correct place
+snvh_tabl[which(snvh_tabl[,3]==1),]
+class(snvh_tabl)
+snvh_tabl <- as.data.frame(snvh_tabl)
+```
+#Repeat the script for each table needed to make
+The SNVM files may have and empty 1st column so I needed to delete them
+Not sure why they were empty
+```{r}
+files_snvm <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVMOD.txt", full.names=T, recursive=FALSE)
+toy_snvm <- files_snvm[1:10]
+lapply(files_snvm, function(x){
+    if(file.size(x)>0){
+      t <- read.table(x, header=F, fill = TRUE)
+      #some files have blanks so have to remove the blanks
+        if(t[1,2] == ""){
+          t <- t[2:nrow(t),]
+        }
+      blue_genes <-as.vector(t$V2) 
+      out <- blue_genes[!duplicated(blue_genes)]
+      #print(blue_genes)
+      write.table(out, "/Volumes/home/greally-lab/T_Trial/Tables/out_snvm.txt", append = TRUE, sep="\t", na ="NA", quote=F,col.names= tools::file_path_sans_ext(basename(x)))
+        }
+})
+butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_snvm.txt", header = F)
+genes <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+genelist_snvm <- as.matrix(sort(genes))
+#head(genelist_snvm)
+#removed the first empty row
+genelist_snvm <- as.matrix(sort(genes[2:length(genes)]))
+colnames(genelist_snvm) <- c("GENES")
+head(genelist_snvm)
+write.csv(genelist_snvm, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.csv")
+saveRDS(files_snvm, file = "/Volumes/home/greally-lab/T_Trial/Tables/files_snvm.Rds")
+saveRDS(genelist_snvm, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.Rds")
+
+files_snvm <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVMOD.txt", full.names=T, recursive=FALSE)
+genelist_snvm <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.Rds")
+snvm_tab <- as.data.frame(rep(0,ro), row.names =genelist_snvm)
+
+#defining Temp outside of the function to prevent it's repeated emptying
+temp <- genelist_snvm
+snvm_tabl <- temp
+ 
+lapply(files_snvm,function(x){
+  base <- tools::file_path_sans_ext(basename(x))
+  named <- c(base,"genes")
+   if (file.size(x)>0){
+    print(named)
+    #save each table as a rds then red it back in as a dataframe with column names
+    mini_table <- read.table(x, header =FALSE)
+    colnames(mini_table) <- named
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes",all.x = TRUE, all.y = TRUE)
+    column[is.na(column)] <- 0
+    #saveRDS(column,file = "/Volumes/home/greally-lab/T_Trial/Work/")
+    write.table(column,file = "/Volumes/home/greally-lab/T_Trial/Work/columns.txt", sep = "\t", append = TRUE, col.names = TRUE)
+    View(column)
+    #snvh_tabl <- cbind(snvh_tabl,column[,2])
+    #View(snvh_tabl)
+}
+  else{
+    empty_table <- cbind(rep(0,ro),genelist_snvh)
+    colnames(empty_table)<-named
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all.x = TRUE, all.y = TRUE)
+    View(column)
+    write.table(column, file = "/Volumes/home/greally-lab/T_Trial/Work/columns.txt", sep = "\t", append = TRUE, col.names = TRUE)
+   #snvh_tabl <- cbind(snvh_tabl,column[,2])
+  #View(snvh_tabl)
+  }
+})
+```
+ 
+ 
+```{r}
+}
+              temp_col <- cbind(temp_col,snvh_temp[,2])
+              #View(temp_col)
+              snvh_table[,j] <- z
+              colnames(snvh_table)[j] <- base
+              #View(snvh_temp)}}
+              #as.matrix(snvh_temp[,2])
+          #it is making from 1->j equal to the column instead of just j @ the time when j = 1 or 2
+        # View(snvh_table)}
+        #else{ 
+         # snvh_table[,j] <- rep(0) 
+          #colnames(snvh_table[,j] <- base)
+           # }
+      #  }
+            #colnames(y) <-(basename,"genes")
+            #print(basename)
+    #  })
+           #snv_table_f$basename <- snvh_temp$basename
+            #snv_table_f <-cbind(snv_table_f,z)
+            #write.table(,"/Volumes/home/greally-lab/Tables",append = TRUE, sep "\t", col.names=tools::file_pathsans_ext(basename(filename)))
+```
+?write.table
+#testing to see what output I get from reading in each file
+```{r}
+  b <- read.table("/Volumes/home/greally-lab/T_Trial/Tables/0189de34-fb68-471f-b0bd-e9a27bfaa3c4_pSNVHIGH.txt", header = F)
+  #make that matrix entry = [match,x] set that equal to x$v1[i] else set equal to 0
+  snvh_tab <- cbind(genelist,0)
+  snvh_table <- genelist
+```
+  #This is the code I used to make each column for the matrix      
+
+  
+```{r}
+    for (i in 1:length(b$V2)){
+    c <- b$V2[i]
+    match <- charmatch(c,snvh_table)
+     print(match)
+     #print(b)
+     snvh_tab[match,2] <- b$V1[i]
+    }
+    colnames(snvh_tab)[,2] <- "burrito""
+     new_row <- as.matrix(snvh_tab[,"burrito""])
+     View(new_row)
+    
+      #for(j in 1:length(match))
+      #{
+      #if(snvh_table==match[j]){
+      #snvh_tab[match,2] <- b$V1[i]}
+        #else{
+        #snvh_tab[,2] = 0
+        #}
+      
+  }
+    matchb <- charmatch(b$v2,snvh_table$V1)
+    
+    
+ #t <- read.table(x, header=F)
+ #colnames(t) <- c("counts", basename)
+ #create a table of all the gene names
+   #if(t(!duplicated(t$basename))){ 
+   #}
+   
+butt_2 <- b$head
+monkey <-as.vector(b$bitch)
+monkeybutt <-table(monkey,butt)
+View(monkeybutt)
+colnames(b) <- c("head","bitch")
+monkey_2 <-monkey[!duplicated(monkey)]
+View(monkey)
+```
+
+ ## Including Plots
+
+```{r pressure, echo=FALSE}
+ plot(pressure)
+```
+
+ Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+ 

@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1506980402830.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "BC54C6D4",
+    "lastKnownWriteTime" : 9016804855183450740,
+    "last_content_update" : 1506980402830,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "CC55A6F6",
+        "caption" : "IDH_tabl",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=IDH_tabl&cache_key=CC55A6F6",
+        "displayedObservations" : 7221,
+        "environment" : "",
+        "object" : "IDH_tabl",
+        "preview" : 0,
+        "totalObservations" : 7221,
+        "variables" : 11
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

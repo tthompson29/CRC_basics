@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1506967069395.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "31B3A7E3",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1506967069395,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "C084789A",
+        "caption" : "genelist_snvm",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=genelist_snvm&cache_key=C084789A",
+        "displayedObservations" : 38475,
+        "environment" : "",
+        "object" : "genelist_snvm",
+        "preview" : 0,
+        "totalObservations" : 38475,
+        "variables" : 1
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
