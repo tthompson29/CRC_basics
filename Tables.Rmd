@@ -9,10 +9,11 @@
 knitr::opts_chunk$set(echo = TRUE)
 install.packages("rmarkdown")
 library(rmarkdown)
-source(BiocLite)
-install.packages("genelib")
-library(genefilter)
-install.packages("genefilter")
+#library(BiocLite)
+#install.packages("genelib")
+#library(genefilter)
+#install.packages("genefilter")
+
 options(stringsAsFactors = FALSE)
 ```
 
@@ -166,6 +167,7 @@ for (i in 1:length(files_snvh)) {
   }
 }
 saveRDS(snvh_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
+snvh_tabl <-readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
 head(snvh_tabl, 10)
 #check that the second pt column has 11 1s in it
 sum(as.numeric(as.character(snvh_tabl[,3])))
@@ -177,6 +179,7 @@ snvh_tabl <- as.data.frame(snvh_tabl)
 #Repeat the script for each table needed to make
 The SNVM files may have and empty 1st column so I needed to delete them
 Not sure why they were empty
+This code took forever. Need to find a new way to do this the 
 ```{r}
 files_snvm <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVMOD.txt", full.names=T, recursive=FALSE)
 toy_snvm <- files_snvm[1:10]
@@ -193,78 +196,310 @@ lapply(files_snvm, function(x){
       write.table(out, "/Volumes/home/greally-lab/T_Trial/Tables/out_snvm.txt", append = TRUE, sep="\t", na ="NA", quote=F,col.names= tools::file_path_sans_ext(basename(x)))
         }
 })
+#Creating the list of genes
 butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_snvm.txt", header = F)
-genes <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
-genelist_snvm <- as.matrix(sort(genes))
-#head(genelist_snvm)
+genes_snvm <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+#genelist_snvm <- as.data.frame(sort(genes_snvm[2]))
+head(genes_snvm)
 #removed the first empty row
-genelist_snvm <- as.matrix(sort(genes[2:length(genes)]))
+genelist_snvm <- as.matrix(sort(genes_snvm[2:length(genes_snvm)]))
 colnames(genelist_snvm) <- c("GENES")
 head(genelist_snvm)
-write.csv(genelist_snvm, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.csv")
+#write.csv(genelist_snvm, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.csv")
+#Saving the varables
 saveRDS(files_snvm, file = "/Volumes/home/greally-lab/T_Trial/Tables/files_snvm.Rds")
 saveRDS(genelist_snvm, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.Rds")
-
-files_snvm <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVMOD.txt", full.names=T, recursive=FALSE)
 genelist_snvm <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm.Rds")
-snvm_tab <- as.data.frame(rep(0,ro), row.names =genelist_snvm)
 
+
+
+#Making the table
+options(stringsAsFactors = FALSE)
+genelist_snvm <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+#snvm_tabl <- as.data.frame(rep(0,nrow(genelist_snvm)), row.names =genelist_snvm)
+toy_snvm <-files_snvm[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
 temp <- genelist_snvm
 snvm_tabl <- temp
- 
-lapply(files_snvm,function(x){
+#x <- files_snvm[2]
+for (i in 1:length(files_snvm)){
+  x<- files_snvm[i]
   base <- tools::file_path_sans_ext(basename(x))
-  named <- c(base,"genes")
+  named_snvm <- c(base,"genes")
    if (file.size(x)>0){
-    print(named)
+    #print(named)
     #save each table as a rds then red it back in as a dataframe with column names
-    mini_table <- read.table(x, header =FALSE)
-    colnames(mini_table) <- named
-    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes",all.x = TRUE, all.y = TRUE)
+    mini_table <- read.table(x, header =FALSE, fill = TRUE)
+    if(mini_table[1,2] == ""){
+          mini_table <- mini_table[2:nrow(mini_table),]
+        }
+    colnames(mini_table) <- named_snvm
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
     column[is.na(column)] <- 0
-    #saveRDS(column,file = "/Volumes/home/greally-lab/T_Trial/Work/")
-    write.table(column,file = "/Volumes/home/greally-lab/T_Trial/Work/columns.txt", sep = "\t", append = TRUE, col.names = TRUE)
-    View(column)
-    #snvh_tabl <- cbind(snvh_tabl,column[,2])
-    #View(snvh_tabl)
+    snvm_tabl <- merge(snvm_tabl, column, by="GENES", all=TRUE)
 }
   else{
-    empty_table <- cbind(rep(0,ro),genelist_snvh)
-    colnames(empty_table)<-named
-    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all.x = TRUE, all.y = TRUE)
-    View(column)
-    write.table(column, file = "/Volumes/home/greally-lab/T_Trial/Work/columns.txt", sep = "\t", append = TRUE, col.names = TRUE)
-   #snvh_tabl <- cbind(snvh_tabl,column[,2])
-  #View(snvh_tabl)
+    empty_table <- cbind(rep(0,nrow(temp)), temp)
+    #head(empty_table)
+    colnames(empty_table)<-named_snvm
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all = TRUE)
+    snvm_tabl <- merge(snvm_tabl, column, by="GENES", all=TRUE)
   }
-})
-```
- 
- 
-```{r}
 }
-              temp_col <- cbind(temp_col,snvh_temp[,2])
-              #View(temp_col)
-              snvh_table[,j] <- z
-              colnames(snvh_table)[j] <- base
-              #View(snvh_temp)}}
-              #as.matrix(snvh_temp[,2])
-          #it is making from 1->j equal to the column instead of just j @ the time when j = 1 or 2
-        # View(snvh_table)}
-        #else{ 
-         # snvh_table[,j] <- rep(0) 
-          #colnames(snvh_table[,j] <- base)
-           # }
-      #  }
-            #colnames(y) <-(basename,"genes")
-            #print(basename)
-    #  })
-           #snv_table_f$basename <- snvh_temp$basename
-            #snv_table_f <-cbind(snv_table_f,z)
-            #write.table(,"/Volumes/home/greally-lab/Tables",append = TRUE, sep "\t", col.names=tools::file_pathsans_ext(basename(filename)))
+
+head(snvm_tabl, 10)
+#check that the second pt column has 11 1s in it
+sum(as.numeric(as.character(snvm_tabl[,3])))
+#check that the 1s are in the correct place
+dim(snvm_tabl)
+snvm_tabl[which(snvm_tabl[,5]==1),]
+class(snvm_tabl)
+snvm_tabl <- as.data.frame(snvm_tabl)
+saveRDS(snvm_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvm_table.Rds")
 ```
-?write.table
+ #SNVLow pass
+```{r}
+files_snvl <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVLOW.txt", full.names=T, recursive=FALSE)
+toy_snvl <- files_snvl[1:10]
+lapply(files_snvl, function(x){
+    if(file.size(x)>0){
+      t <- read.table(x, header=F, fill = TRUE)
+      #some files have blanks so have to remove the blanks
+        if(t[1,2] == ""){
+          t <- t[2:nrow(t),]
+        }
+      blue_genes <-as.vector(t$V2) 
+      out <- blue_genes[!duplicated(blue_genes)]
+      #print(blue_genes)
+      write.table(out, "/Volumes/home/greally-lab/T_Trial/Tables/out_snvl.txt", append = TRUE, sep="\t", na ="NA", quote=F,col.names= tools::file_path_sans_ext(basename(x)))
+        }
+})
+#Creating the list of genes
+butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_snvl.txt", header = F)
+genes_snvl <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+#genelist_snvl <- as.data.frame(sort(genes_snvl[2]))
+head(genes_snvl)
+#removed the first empty row 
+#MAKE SURE THIS WORKS
+genelist_snvl <- as.matrix(sort(genes_snvl[2:length(genes_snvl)]))
+dim(genelist_snvl)
+colnames(genelist_snvl) <- c("GENES")
+head(genelist_snvl)
+#write.csv(genelist_snvl, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvl.csv")
+#Saving the varables
+saveRDS(files_snvl, file = "/Volumes/home/greally-lab/T_Trial/Tables/files_snvl.Rds")
+saveRDS(genelist_snvl, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvl.Rds")
+
+
+
+
+#Making the table
+options(stringsAsFactors = FALSE)
+genelist_snvl <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+#snvl_tabl <- as.data.frame(rep(0,nrow(genelist_snvl)), row.names =genelist_snvl)
+toy_snvl <-files_snvl[1:10]
+#defining Temp outside of the function to prevent it's repeated emptying
+temp <- genelist_snvl
+snvl_tabl <- temp
+x <- files_snvl[388]
+for (i in 1:length(files_snvl)){
+  x<- files_snvl[i]
+  base <- tools::file_path_sans_ext(basename(x))
+  named_snvl <- c(base,"genes")
+   if (file.size(x)>0){
+    #print(named)
+    #save each table as a rds then red it back in as a dataframe with column names
+    mini_table <- read.table(x, header =FALSE, fill = TRUE)
+    
+    sum(mini_table[,1])
+    if(mini_table[1,2] == ""){
+          mini_table <- mini_table[2:nrow(mini_table),]
+        }
+    colnames(mini_table) <- named_snvl
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
+    column[is.na(column)] <- 0
+    snvl_tabl <- merge(snvl_tabl, column, by= "GENES", all=TRUE)
+    head(snvl_tabl)
+}
+  else{
+    empty_table <- cbind(rep(0,nrow(temp)), temp)
+    #head(empty_table)
+    colnames(empty_table)<-named_snvl
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all = TRUE)
+    snvl_tabl <- merge(snvl_tabl, column, by="GENES", all=TRUE)
+  }
+}
+
+head(snvl_tabl)
+#check that the second pt column has 11 1s in it
+sum(as.numeric(as.character(snvl_tabl[,389])))
+#check that the 1s are in the correct place
+dim(snvl_tabl)
+snvl_tabl[which(snvl_tabl[,5]==1),]
+class(snvl_tabl)
+snvl_tabl <- as.data.frame(snvl_tabl)
+saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table.Rds")
+```
+#Indel Section
+```{r}
+files_IDH <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pINDELHIGH.txt", full.names=T, recursive=FALSE)
+toy_IDH <- files_IDH[1:10]
+lapply(files_IDH, function(x){
+    if(file.size(x)>0){
+      t <- read.table(x, header=F, fill = TRUE)
+      #some files have blanks so have to remove the blanks
+        if(t[1,2] == ""){
+          t <- t[2:nrow(t),]
+        }
+      blue_genes <-as.vector(t$V2) 
+      out <- blue_genes[!duplicated(blue_genes)]
+      #print(blue_genes)
+      write.table(out, "/Volumes/home/greally-lab/T_Trial/Tables/out_IDH.txt", append = TRUE, sep="\t", na ="NA", quote=F,col.names= tools::file_path_sans_ext(basename(x)))
+        }
+})
+#Creating the list of genes
+butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_IDH.txt", header = F)
+genes_IDH <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+#genelist_IDH <- as.data.frame(sort(genes_IDH[2]))
+head(genes_IDH)
+#removed the first empty row
+genelist_IDH <- as.matrix(sort(genes_IDH[2:length(genes_IDH)]))
+colnames(genelist_IDH) <- c("GENES")
+head(genelist_IDH)
+#write.csv(genelist_IDH, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDH.csv")
+#Saving the varables
+saveRDS(files_IDH, file = "/Volumes/home/greally-lab/T_Trial/Tables/files_IDH.Rds")
+saveRDS(genelist_IDH, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDH.Rds")
+genelist_IDH <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDH.Rds")
+
+
+
+#Making the table
+options(stringsAsFactors = FALSE)
+genelist_IDH <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+#IDH_tabl <- as.data.frame(rep(0,nrow(genelist_IDH)), row.names =genelist_IDH)
+toy_IDH <-files_IDH[1:10]
+#defining Temp outside of the function to prevent it's repeated emptying
+temp <- genelist_IDH
+IDH_tabl <- temp
+#TEST:x <- files_IDH[5]
+for (i in 1:length(files_IDH)){
+  x<- files_IDH[i]
+  base <- tools::file_path_sans_ext(basename(x))
+  named_IDH <- c(base,"genes")
+   if (file.size(x)>0){
+    #print(named)
+    #save each table as a rds then red it back in as a dataframe with column names
+    mini_table <- read.table(x, header =FALSE, fill = TRUE)
+   # TEST:sum(mini_table[,1])
+    if(mini_table[1,2] == ""){
+          mini_table <- mini_table[2:nrow(mini_table),]
+        }
+    colnames(mini_table) <- named_IDH
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
+    column[is.na(column)] <- 0
+    IDH_tabl <- merge(IDH_tabl, column, by="GENES", all=TRUE)
+}
+  else{
+    empty_table <- cbind(rep(0,nrow(temp)), temp)
+    #head(empty_table)
+    colnames(empty_table)<-named_IDH
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all = TRUE)
+    IDH_tabl <- merge(IDH_tabl, column, by="GENES", all=TRUE)
+  }
+}
+
+head(IDH_tabl, 10)
+#check that the second pt column has 11 1s in it
+sum(as.numeric(as.character(IDH_tabl[,6])))
+#check that the 1s are in the correct place
+dim(IDH_tabl)
+IDH_tabl[which(IDH_tabl[,5]!=0),]
+class(IDH_tabl)
+IDH_tabl <- as.data.frame(IDH_tabl)
+saveRDS(IDH_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDH_table.Rds")
+```
+
+#INDEL MODIFIERS
+```{r}
+files_IDM <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pINDELMOD.txt", full.names=T, recursive=FALSE)
+toy_IDM <- files_IDM[1:10]
+lapply(files_IDM, function(x){
+    if(file.size(x)>0){
+      t <- read.table(x, header=F, fill = TRUE)
+      #some files have blanks so have to remove the blanks
+        if(t[1,2] == ""){
+          t <- t[2:nrow(t),]
+        }
+      blue_genes <-as.vector(t$V2) 
+      out <- blue_genes[!duplicated(blue_genes)]
+      #print(blue_genes)
+      write.table(out, "/Volumes/home/greally-lab/T_Trial/Tables/out_IDM.txt", append = TRUE, sep="\t", na ="NA", quote=F,col.names= tools::file_path_sans_ext(basename(x)))
+        }
+})
+#Creating the list of genes
+butt = read.delim("/Volumes/home/greally-lab/T_Trial/Tables/out_IDM.txt", header = F)
+genes_IDM <- as.matrix(butt$V2[!duplicated(butt$V2)]) 
+#genelist_IDM <- as.data.frame(sort(genes_IDM[2]))
+head(genes_IDM)
+#removed the first empty row
+genelist_IDM <- as.matrix(sort(genes_IDM[2:length(genes_IDM)]))
+colnames(genelist_IDM) <- c("GENES")
+head(genelist_IDM)
+#write.csv(genelist_IDM, "/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDM.csv")
+#Saving the varables
+saveRDS(files_IDM, file = "/Volumes/home/greally-lab/T_Trial/Tables/files_IDM.Rds")
+saveRDS(genelist_IDM, file = "/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDM.Rds")
+genelist_IDM <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_IDM.Rds")
+
+
+
+#Making the table
+options(stringsAsFactors = FALSE)
+#Only run if starting here: genelist_IDM <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.Rds")
+#IDM_tabl <- as.data.frame(rep(0,nrow(genelist_IDM)), row.names =genelist_IDM)
+toy_IDM <-files_IDM[1:10]
+#defining Temp outside of the function to prevent it's repeated emptying
+temp <- genelist_IDM
+IDM_tabl <- temp
+#x <- files_IDM[10]
+for (i in 1:length(files_IDM)){
+  x<- files_IDM[i]
+  base <- tools::file_path_sans_ext(basename(x))
+  named_IDM <- c(base,"genes")
+   if (file.size(x)>0){
+    mini_table <- read.table(x, header =FALSE, fill = TRUE)
+   #sum(mini_table[,1])
+   #head(mini_table)
+    if(mini_table[1,2] == ""){
+          mini_table <- mini_table[2:nrow(mini_table),]
+        }
+    colnames(mini_table) <- named_IDM
+    column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
+    column[is.na(column)] <- 0
+    IDM_tabl <- merge(IDM_tabl, column, by="GENES", all=TRUE)
+}
+  else{
+    empty_table <- cbind(rep(0,nrow(temp)), temp)
+    #head(empty_table)
+    colnames(empty_table)<-named_IDM
+    column <- merge(temp,empty_table, by.x = "GENES",by.y="genes",all = TRUE)
+    IDM_tabl <- merge(IDM_tabl, column, by="GENES", all=TRUE)
+  }
+}
+
+head(IDM_tabl, 10)
+#check that the second pt column has 11 1s in it
+sum(as.numeric(as.character(IDM_tabl[,11])))
+#check that the 1s are in the correct place
+dim(IDM_tabl)
+IDM_tabl[which(IDM_tabl[,5]!=0),]
+class(IDM_tabl)
+IDM_tabl <- as.data.frame(IDM_tabl)
+saveRDS(IDM_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDM_table.Rds")
+```
+
+
 #testing to see what output I get from reading in each file
 ```{r}
   b <- read.table("/Volumes/home/greally-lab/T_Trial/Tables/0189de34-fb68-471f-b0bd-e9a27bfaa3c4_pSNVHIGH.txt", header = F)
