@@ -1,0 +1,44 @@
+---
+title: "Onco_plots"
+author: "Taylor"
+date: "10/4/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("cBioPortal", dependencies = TRUE, repos = 'http://cran.rstudio.com')
+source("https://bioconductor.org/biocLite.R")
+biocLite("ComplexHeatmap")
+library(ComplexHeatmap)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r Reading in all the tables from Tables.Rmd}
+snvh_table_f <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table_full.Rds")
+snvm_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/snvm_table_full.Rds")
+snvl_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/snvl_table_full.Rds")
+INDELLow_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDL_table_full.Rds")
+INDELHIGH_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDH_table_full.Rds")
+INDELMOD_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDM_table_full.Rds")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r oncoprint, echo=FALSE}
+#Make lists of all the files
+mat_list_snv <- list(snvh_table_f,snvm_table_f,snvl_table_f)
+mat_list_indel <- list(INDELHIGH_table_f,INDELLow_table_f,INDELMOD_table_f)
+mat_list <- list(snvh_table_f, INDELHIGH_table_f, snvl_table_f, INDELLow_table_f, snvm_table_f, INDELMOD_table_f)
+# unify the matrices to make them all have the same demetions
+mat_list_snv_uniunify_mat_list(mat_list_snv)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

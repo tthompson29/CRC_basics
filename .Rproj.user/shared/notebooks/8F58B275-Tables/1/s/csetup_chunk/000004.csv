@@ -1,4 +1,0 @@
-"0","library(BiocLite)
-"
-"2","Error in library(BiocLite) : there is no package called ‘BiocLite’
-"
