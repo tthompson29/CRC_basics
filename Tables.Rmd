@@ -299,7 +299,7 @@ snvh_tab <- as.data.frame(rep(0,ro), row.names =genelist_snvh)
       }
   }
 ```
-
+#SNV High
 ```{r}
 files_snvh <- list.files(path="/Volumes/home/greally-lab/T_Trial/Tables", pattern="*_pSNVHIGH.txt", full.names=T, recursive=FALSE)
 toy_2 <- files[1:10]
@@ -311,7 +311,7 @@ full_gene_list <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/full_genelis
 #defining Temp outside of the function to prevent it's repeated emptying
 temp <- full_gene_list
 snvh_tabl <- temp
-
+#x <- files_snvh[355]
 for (i in 1:length(files_snvh)) {
   x<- files_snvh[i]
   base <- tools::file_path_sans_ext(basename(x))
@@ -321,6 +321,7 @@ for (i in 1:length(files_snvh)) {
     #print(named)
     #save each table as a rds then red it back in as a dataframe with column names
     mini_table <- read.table(x, header =FALSE)
+    #sum(mini_table[,1])
     colnames(mini_table) <- named
     column <- merge(temp,mini_table, by.x = "GENES",by.y="genes", all=TRUE)
     column[is.na(column)] <- 0
@@ -344,7 +345,7 @@ snvh_table <-readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
 snvh_table_full <-readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table_full.Rds")
 head(snvh_tabl, 10)
 #check that the second pt column has 11 1s in it
-sum(as.numeric(as.character(snvh_tabl[,3])))
+sum(as.numeric(as.character(snvh_tabl[,356])))
 #check that the 1s are in the correct place
 snvh_tabl[which(snvh_tabl[,3]==1),]
 class(snvh_tabl)
@@ -353,7 +354,8 @@ snvh_tabl <- as.data.frame(snvh_tabl)
 #Repeat the script for each table needed to make
 The SNVM files may have and empty 1st column so I needed to delete them
 Not sure why they were empty
-This code took forever. Need to find a new way to do this the 
+This code took forever. Need to find a new way to do this the
+#SNV MOD
 ```{r}
 #Making the table
 options(stringsAsFactors = FALSE)
@@ -362,9 +364,9 @@ genelist_snvm <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvm
 #snvm_tabl <- as.data.frame(rep(0,nrow(genelist_snvm)), row.names =genelist_snvm)
 toy_snvm <-files_snvm[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
-temp <- genelist_snvm
+temp <- full_gene_list
 snvm_tabl <- temp
-x <- files_snvm[2]
+x <- files_snvm[203]
 for (i in 1:length(files_snvm)){
   x<- files_snvm[i]
   base <- tools::file_path_sans_ext(basename(x))
@@ -374,6 +376,8 @@ for (i in 1:length(files_snvm)){
     #print(named)
     #save each table as a rds then red it back in as a dataframe with column names
     mini_table <- read.table(x, header =FALSE, fill = TRUE)
+    #sum(mini_table[,1])
+    head(mini_table)
     if(mini_table[1,2] == ""){
           mini_table <- mini_table[2:nrow(mini_table),]
         }
@@ -393,15 +397,17 @@ for (i in 1:length(files_snvm)){
 
 head(snvm_tabl, 10)
 #check that the second pt column has 11 1s in it
-sum(as.numeric(as.character(snvm_tabl[,3])))
+sum(as.numeric(as.character(snvm_tabl[,204])))
 #check that the 1s are in the correct place
 dim(snvm_tabl)
 snvm_tabl[which(snvm_tabl[,5]==1),]
 class(snvm_tabl)
 snvm_tabl <- as.data.frame(snvm_tabl)
 saveRDS(snvm_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvm_table.Rds")
+saveRDS(snvm_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvm_table_full.Rds")
+snvm_table_full <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvm_table_full.Rds")
 ```
- #SNVLow pass
+#SNVLow pass
 ```{r}
 #Making the table
 options(stringsAsFactors = FALSE)
@@ -409,7 +415,7 @@ genelist_snvl <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvl
 #snvl_tabl <- as.data.frame(rep(0,nrow(genelist_snvl)), row.names =genelist_snvl)
 toy_snvl <-files_snvl[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
-temp <- genelist_snvl
+temp <- full_gene_list
 snvl_tabl <- temp
 x <- files_snvl[388]
 for (i in 1:length(files_snvl)){
@@ -421,8 +427,7 @@ for (i in 1:length(files_snvl)){
     #print(named)
     #save each table as a rds then red it back in as a dataframe with column names
     mini_table <- read.table(x, header =FALSE, fill = TRUE)
-    
-    sum(mini_table[,1])
+    #sum(mini_table[,1])
     if(mini_table[1,2] == ""){
           mini_table <- mini_table[2:nrow(mini_table),]
         }
@@ -450,8 +455,9 @@ snvl_tabl[which(snvl_tabl[,5]==1),]
 class(snvl_tabl)
 snvl_tabl <- as.data.frame(snvl_tabl)
 saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table.Rds")
+saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table_full.Rds")
 ```
-#Indel Section
+#Indel Section_ INDEL_HIGH
 ```{r}
 #Making the table
 options(stringsAsFactors = FALSE)
@@ -459,9 +465,9 @@ genelist_IDH <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/genelist_snvh.
 #IDH_tabl <- as.data.frame(rep(0,nrow(genelist_IDH)), row.names =genelist_IDH)
 toy_IDH <-files_IDH[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
-temp <- genelist_IDH
+temp <- full_gene_list
 IDH_tabl <- temp
-#TEST:x <- files_IDH[5]
+x <- files_IDH[57]
 for (i in 1:length(files_IDH)){
   x<- files_IDH[i]
   base <- tools::file_path_sans_ext(basename(x))
@@ -471,7 +477,7 @@ for (i in 1:length(files_IDH)){
     #print(named)
     #save each table as a rds then red it back in as a dataframe with column names
     mini_table <- read.table(x, header =FALSE, fill = TRUE)
-   # TEST:sum(mini_table[,1])
+   #sum(mini_table[,1])
     if(mini_table[1,2] == ""){
           mini_table <- mini_table[2:nrow(mini_table),]
         }
@@ -491,13 +497,14 @@ for (i in 1:length(files_IDH)){
 
 head(IDH_tabl, 10)
 #check that the second pt column has 11 1s in it
-sum(as.numeric(as.character(IDH_tabl[,6])))
+sum(as.numeric(as.character(IDH_tabl[,58])))
 #check that the 1s are in the correct place
 dim(IDH_tabl)
 IDH_tabl[which(IDH_tabl[,5]!=0),]
 class(IDH_tabl)
 IDH_tabl <- as.data.frame(IDH_tabl)
 saveRDS(IDH_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDH_table.Rds")
+saveRDS(IDH_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDH_table_full.Rds")
 ```
 
 #INDEL MODIFIERS
@@ -508,17 +515,18 @@ options(stringsAsFactors = FALSE)
 #IDM_tabl <- as.data.frame(rep(0,nrow(genelist_IDM)), row.names =genelist_IDM)
 toy_IDM <-files_IDM[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
-temp <- genelist_IDM
+temp <- full_gene_list
 IDM_tabl <- temp
-#x <- files_IDM[534]
+x <- files_IDM[34]
 for (i in 1:length(files_IDM)){
   x<- files_IDM[i]
   base <- tools::file_path_sans_ext(basename(x))
+  base <- gsub("_pINDELMOD","",base)
   named_IDM <- c(base,"genes")
    if (file.size(x)>0){
     mini_table <- read.table(x, header =FALSE, fill = TRUE)
-   #sum(mini_table[,1])
-   #head(mini_table)
+   sum(mini_table[,1])
+   head(mini_table)
     if(mini_table[1,2] == ""){
           mini_table <- mini_table[2:nrow(mini_table),]
         }
@@ -538,13 +546,14 @@ for (i in 1:length(files_IDM)){
 
 head(IDM_tabl, 10)
 #check that the second pt column has 11 1s in it
-sum(as.numeric(as.character(IDM_tabl[,535])))
+sum(as.numeric(as.character(IDM_tabl[,35])))
 #check that the 1s are in the correct place
 dim(IDM_tabl)
 IDM_tabl[which(IDM_tabl[,5]!=0),]
 class(IDM_tabl)
 #IDM_tabl <- as.data.frame(IDM_tabl)
 saveRDS(IDM_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDM_table.Rds")
+saveRDS(IDM_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDM_table_full.Rds")
 ```
 
 #INDEL LOW
@@ -559,16 +568,17 @@ options(stringsAsFactors = FALSE)
 #stopped here - RUN TOY DATA
 toy_IDL <-files_IDL[1:10]
 #defining Temp outside of the function to prevent it's repeated emptying
-temp <- genelist_IDL
+temp <- full_gene_list
 IDL_tabl <- temp
-x <- files_IDL[42]
+x <- files_IDL[242]
 for (i in 1:length(files_IDL)){
   x<- files_IDL[i]
   base <- tools::file_path_sans_ext(basename(x))
+  base <- gsub("_pINDELLOW","",base)
   named_IDL <- c(base,"genes")
    if (file.size(x)>0){
     mini_table <- read.table(x, header =FALSE, fill = TRUE)
-   sum(mini_table[,1])
+   #sum(mini_table[,1])
    #head(mini_table)
     if(mini_table[1,2] == ""){
           mini_table <- mini_table[2:nrow(mini_table),]
@@ -589,13 +599,14 @@ for (i in 1:length(files_IDL)){
 
 head(IDL_tabl, 10)
 #check that the second pt column has 11 1s in it
-sum(as.numeric(as.character(IDL_tabl[,43])))
+sum(as.numeric(as.character(IDL_tabl[,243])))
 #check that the 1s are in the correct place
 dim(IDL_tabl)
 IDL_tabl[which(IDL_tabl[,5]!=0),]
 class(IDL_tabl)
 #IDL_tabl <- as.data.frame(IDL_tabl)
 saveRDS(IDL_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table.Rds")
+saveRDS(IDL_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table_full.Rds")
 ```
 
 #testing to see what output I get from reading in each file

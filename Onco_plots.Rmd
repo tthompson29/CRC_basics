@@ -26,6 +26,45 @@ snvl_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/snvl_table_fu
 INDELLow_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDL_table_full.Rds")
 INDELHIGH_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDH_table_full.Rds")
 INDELMOD_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDM_table_full.Rds")
+
+# Obtain Meta data (self-reported)
+Meta_data_COAD <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/COAD_clinical_info.csv")
+Meta_data_READ <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/READ_clinical_info.csv")
+META_data<- rbind(Meta_data_COAD,Meta_data_READ)
+View(META_data)
+
+PT <- as.data.frame(matrix(nrow = 0,ncol = 76))
+colnames(PT)<- colnames(Meta_data_COAD)
+  AA_PT <- PT
+  ASIAN_PT <- PT
+  HIS_PT <-PT
+  WHITE_PT <- PT
+  Other_Pt <- PT
+
+for(x in 1:nrow(META_data)){
+  y <- META_data[x,]
+  if(y$race_list == "WHITE"){
+    WHITE_PT <- rbind(WHITE_PT,y)
+    #View(WHITE_PT)
+  }
+  if(y$race_list =="BLACK OR AFRICAN AMERICAN"){
+    AA_PT <- rbind(AA_PT,y)
+  }
+  if(y$race_list == "ASIAN"){
+    ASIAN_PT <- rbind(ASIAN_PT,y)
+  }
+  if(y$race_list ==""){
+    Other_Pt <- rbind(Other_Pt,y)
+  }
+}
+  
+sum(META_data$race_list =="WHITE")
+dim(WHITE_PT) 
+sum(META_data$race_list =="BLACK OR AFRICAN AMERICAN")
+dim(AA_PT)
+sum(META_data$race_list =="")
+dim(Other_Pt)
+
 ```
 
 ## Including Plots
@@ -37,8 +76,20 @@ You can also embed plots, for example:
 mat_list_snv <- list(snvh_table_f,snvm_table_f,snvl_table_f)
 mat_list_indel <- list(INDELHIGH_table_f,INDELLow_table_f,INDELMOD_table_f)
 mat_list <- list(snvh_table_f, INDELHIGH_table_f, snvl_table_f, INDELLow_table_f, snvm_table_f, INDELMOD_table_f)
+matlist_high <- list(snvh_table_f, INDELHIGH_table_f)
+matlist_low <- list(snvl_table_f, INDELLow_table_f)
+matlist_mod <- list(snvm_table_f, INDELMOD_table_f)
+mat_list_snv$snvh_table_f
 # unify the matrices to make them all have the same demetions
 mat_list_snv_uniunify_mat_list(mat_list_snv)
+
+
+
+oncoPrint(mat_list_snv,
+    alter_fun = list(
+        snv = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.9, gp = gpar(fill = col["snv"], col = NA)),
+        indel = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.4, gp = gpar(fill = col["indel"], col = NA))
+    ), col = col)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
