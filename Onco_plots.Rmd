@@ -19,61 +19,1583 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r Reading in all the tables from Tables.Rmd}
+```{r, Making Subjective ethnicity tables}
+###               Creating the values for which patients ar which ethnicity 
+snvh_table <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
 snvh_table_f <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table_full.Rds")
 snvm_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/snvm_table_full.Rds")
 snvl_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/snvl_table_full.Rds")
 INDELLow_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDL_table_full.Rds")
 INDELHIGH_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDH_table_full.Rds")
 INDELMOD_table_f <- readRDS("/Volumes/home/greally-lab//T_Trial/Tables/IDM_table_full.Rds")
-
+# Altered tables with shorter names
+SNVH_fn<- readRDS("/Volumes/home/greally-lab/T_Trial/SNVHIGH_fn.Rds")
+SNVL_fn<- readRDS("/Volumes/home/greally-lab/T_Trial/SNVLOW_fn.Rds")
+SNVM_fn<- readRDS("/Volumes/home/greally-lab/T_Trial/SNVMOD_fn.Rds")
+INDELHIGH_tfn<- readRDS("/Volumes/home/greally-lab/T_Trial/INDELHIGH_fn.Rds")
+INDELLow_tfn<- readRDS("/Volumes/home/greally-lab/T_Trial/INDELLOW_fn.Rds")
+INDELMOD_tfn<- readRDS("/Volumes/home/greally-lab/T_Trial/INDELMOD_fn.Rds")
 # Obtain Meta data (self-reported)
 Meta_data_COAD <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/COAD_clinical_info.csv")
 Meta_data_READ <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/READ_clinical_info.csv")
 META_data<- rbind(Meta_data_COAD,Meta_data_READ)
-View(META_data)
+dim(META_data)
 
+
+write.table(META_data,"/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/CRC_clinical.txt", sep = "\t")
+sum(nrow(Meta_data_COAD),nrow(Meta_data_READ))
+sum(META_data$race_list == "ASIAN")
 PT <- as.data.frame(matrix(nrow = 0,ncol = 76))
 colnames(PT)<- colnames(Meta_data_COAD)
-  AA_PT <- PT
+  AFR_PT <- PT
   ASIAN_PT <- PT
-  HIS_PT <-PT
-  WHITE_PT <- PT
-  Other_Pt <- PT
-
+  HIS_PT <-PT 
+  CEU_PT <- PT
+  Other_PT <- PT
+dim(META_data)
+#629 76
+levels(META_data$ethnicity) # ""                       "HISPANIC OR LATINO"     "NOT HISPANIC OR LATINO"
+View(META_data[1,])
 for(x in 1:nrow(META_data)){
   y <- META_data[x,]
+  if(y$ethnicity == "HISPANIC OR LATINO"){
+   HIS_PT <- rbind(HIS_PT,y) 
+  }
+  else{
   if(y$race_list == "WHITE"){
-    WHITE_PT <- rbind(WHITE_PT,y)
+    CEU_PT <- rbind(CEU_PT,y)
     #View(WHITE_PT)
   }
   if(y$race_list =="BLACK OR AFRICAN AMERICAN"){
-    AA_PT <- rbind(AA_PT,y)
+    AFR_PT <- rbind(AFR_PT,y)
   }
   if(y$race_list == "ASIAN"){
     ASIAN_PT <- rbind(ASIAN_PT,y)
   }
+   if(y$race_list == "AMERICAN INDIAN OR ALASKA NATIVE"){
+    ASIAN_PT <- rbind(ASIAN_PT,y)
+  }
   if(y$race_list ==""){
-    Other_Pt <- rbind(Other_Pt,y)
+    Other_PT <- rbind(Other_PT,y)
+  }
   }
 }
-  
-sum(META_data$race_list =="WHITE")
-dim(WHITE_PT) 
-sum(META_data$race_list =="BLACK OR AFRICAN AMERICAN")
-dim(AA_PT)
+
+head(HIS_PT,10)# 10 pts There are definitely 10 distinct patients
+sum(META_data$ethnicity =="HISPANIC OR LATINO")# sum = 5 not sure why
+sum(nrow(AFR_PT),nrow(ASIAN_PT),nrow(Other_PT),nrow(CEU_PT))
+#629 patients = smae as the number of rows in META data
+sum(nrow(META_data))
+sum(nrow(Other_PT))
 sum(META_data$race_list =="")
-dim(Other_Pt)
+#missing 1 patient
+#CEU = 296 pts
+#AFR = 65 pts
+#ASAIN = 12 pts + 1 Native American
+#No_race = 255 pts
+write.csv(CEU_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/White_meta_CRC.csv")
+dim(CEU_PT) 
+#296 76
+sum(META_data$race_list =="BLACK OR AFRICAN AMERICAN")
+write.csv(AFR_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/Black_meta_CRC.csv")
+dim(AFR_PT)
+#65 76
+sum(META_data$race_list =="")
+write.csv(Other_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/Other_meta_CRC.csv")
+dim(Other_PT)
+#255 76
+write.csv(ASIAN_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/Asian_meta_CRC.csv")
+dim(ASIAN_PT)
+#13 76
+```
+Can use the same meta data tables for each Filter set
+
+```{r, SNVH long version}
+### Making the subjective seperations for the table
+#Seperating out the patients based on ethnicity
+#need to group the ethnicities for the permutation so first make individual matricies of the ethnicities then cbind them together like data = cbind(data_AFR,data_CEU,data_AMR,data_AS) 
+ x <- 16
+ options(stringsAsFactors = FALSE)
+ SNVH_fn_AFR <-as.data.frame(SNVH_fn[1])
+ SNVH_fn_CEU <- as.data.frame(SNVH_fn[1])
+ SNVH_fn_Other <- as.data.frame(SNVH_fn[1])
+ SNVH_fn_ASIAN <- as.data.frame(SNVH_fn[1])
+for(x in 2:ncol(SNVH_fn)){
+  if(match(paste0("TCGA-",colnames(SNVH_fn)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(SNVH_fn[,x])
+    cname<- colnames(SNVH_fn)[x]
+    colnames(tempcol) <- cname
+    SNVH_fn_AFR <- cbind(SNVH_fn_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_fn)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVH_fn[,x])
+    cname <- colnames(SNVH_fn)[x]
+    colnames(tempcol) <- cname
+    SNVH_fn_CEU <- cbind(SNVH_fn_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_fn)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVH_fn[,x])
+    cname<- colnames(SNVH_fn)[x]
+    colnames(tempcol) <- cname
+    SNVH_fn_Other <- cbind(SNVH_fn_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_fn)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVH_fn[,x])
+    cname <- colnames(SNVH_fn)[x]
+    colnames(tempcol) <- cname
+    SNVH_fn_ASIAN <- cbind(SNVH_fn_ASIAN,tempcol)
+  }
+} 
+SNVH_fn[,1]
+dim(SNVH_fn_AFR)
+dim(AFR_PT)
+#39625 71(there are 65 patients of AFR ancestry 5 of them should be duplicated) 
+#A-6 -6650 (5)
+dim(SNVH_fn_CEU)
+#39625 330
+dim(CEU_PT)
+#296 pts 33 duplicated
+#cbind races
+dim(SNVH_fn_ASIAN)
+#13 pts perfect
+dim(ASIAN_PT)
+#13 pts
+dim(SNVH_fn_Other)
+#242 pts
+dim(Other_PT)
+#242 should be 255 pts? not sure whats up
+sum(ncol(SNVH_fn_ASIAN),ncol(SNVH_fn_AFR),ncol(SNVH_fn_CEU),ncol(SNVH_fn_Other))
+#658 patients! 3? are missing. Will review in a minute
+dim(CEU_PT)
+
+############FINDING MISSING VALUES################################
+SNVH_data <- cbind(SNVH_fn_AFR,SNVH_fn_CEU[,2:330],SNVH_fn_ASIAN[2:14],SNVH_fn_Other[,2:243])
+sum(is.na(match(colnames(SNVH_fn_AFR)[2:ncol(SNVH_fn_AFR)],colnames(SNVH_fn))))
+sum(is.na(match(colnames(SNVH_fn_CEU)[2:ncol(SNVH_fn_CEU)],colnames(SNVH_fn))))
+sum(is.na(match(colnames(SNVH_fn_ASIAN)[2:ncol(SNVH_fn_ASIAN)],colnames(SNVH_fn))))
+sum(is.na(match(colnames(SNVH_fn_Other)[2:ncol(SNVH_fn_Other)],colnames(SNVH_fn))))
+dim(SNVH_data)
+row.names(SNVH_data) <- SNVH_data$GENES
+SNVH_data <-SNVH_data[-1]
+##Checking placement of each subtable
+colnames(SNVH_fn_AFR)[2] ==colnames(SNVH_data)[72]
+colnames(SNVH_fn_CEU)[330] == colnames(SNVH_data)[400]
+colnames(SNVH_data)[413] == colnames(SNVH_fn_ASIAN)[14]
+colnames(SNVH_fn_Other)[243]
+colnames(SNVH_data)[655]
+ncol(SNVH_data)
+### Name_table is int he renaming .R file may need to move it
+Missing <- as.matrix(!match(1:658,sort(match(name_table_3[,2], colnames(SNVH_data)))))
+options(stringsAsFactors = F)
+#####################################Permuation########################
+
+AFR_mean = NULL
+CEU_mean = NULL
+OTHER_mean = NULL
+ASIAN_mean = NULL
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+    tmp_data = t(apply(SNVH_data,1,sample))
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+    
+    sub_AFR_mean = apply(tmp_data[1:5,1:70],1,mean)
+    sub_CEU_mean = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean = cbind(AFR_mean, sub_AFR_mean)
+    CEU_mean = cbind(CEU_mean, sub_CEU_mean)
+    ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
+    OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
+    
+}
+
+
+## the result say CEU_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean) = paste0("permute",seq(1:1000))
+AFR_mean[1:10,1:10]
+#rownames(CEU_mean) = paste0("gene",seq(1:1000))
+colnames(CEU_mean) = paste0("permute",seq(1:1000))
+CEU_mean[1:10,1:10]
+#rownames(CEU_mean) = paste0("gene",seq(1:5000))
+colnames(ASIAN_mean) = paste0("permute",seq(1:1000))
+#rownames(AMR_mean) = paste0("gene",seq(1:5000))
+colnames(OTHER_mean) = paste0("permute",seq(1:1000))
+#rownames(AS_mean) = paste0("gene",seq(1:5000))
+
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean = apply(SNVH_data[,1:70],1,mean)
+ob_CEU_mean = apply(SNVH_data[,71:399],1,mean)
+ob_ASIAN_mean = apply(SNVH_data[,400:412],1,mean)
+ob_OTHER_mean = apply(SNVH_data[,412:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:39625,function(x)sum(ob_AFR_mean[x]<AFR_mean[x,])/500)
+p_CEU_enrichment = sapply(1:39625,function(x)sum(ob_CEU_mean[x]<CEU_mean[x,])/500)
+p_ASIAN_enrichment = sapply(1:39625,function(x)sum(ob_ASIAN_mean[x]<ASIAN_mean[x,])/500)
+p_OTHER_enrichment = sapply(1:39625,function(x)sum(ob_OTHER_mean[x]<OTHER_mean[x,])/500)
+
+p_CEU_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+SNVH_AFR_enrich <- which(p_AFR_enrichment<1/500)
+SNVH_CEU_enrich <-which(p_CEU_enrichment<1/500)
+SNVH_ASIAN_enrich <-which(p_ASIAN_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+
+# let's take a look at the index I set to be enriched in CEU again
+enrich_idx
+which(p_AFR_enrichment<1/500)
+```
+Started out with the filters having all genes instead of just genes that were of interest for that filter. That was 39625 genes. This is more than we want to visualize so we are scaling back down to only the genes of interest for each filter. This may be a problem when we combine tables for various filter settings. 
+
+The main reason i went up to all the genes to make sure that all the tables had the same rows and colmuns making them easier to compare using the complex heat maps oncoprint function.
+```{r, SNVH short version}
+###      Choosing only the significant genes## 
+HIGH_SIG=apply(SNVH_data,1,function(x)sum(x>0))
+SNVH_SIG = which(HIGH_SIG>10)
+Sig_vector <- as.vector(SNVH_SIG)
+SNVH_sig_table <- apply(SNVH_data,1,function(x)sum)
+#relized that I already have tables that are only the genes of insterest fo each filter set
+#################################Re-run with small talbes#####################################
+##################################Race Stratification####################
+SNVH_n<-readRDS("/Volumes/home/greally-lab/T_Trial/SNVHIGH_n.Rds")
+SNVH_n[1:5,1:5]
+options(stringsAsFactors = FALSE)
+class(SNVH_n[,5])
+
+SNVH_n_AFR <-as.data.frame(SNVH_n[1])
+SNVH_n_CEU <- as.data.frame(SNVH_n[1])
+SNVH_n_Other <- as.data.frame(SNVH_n[1])
+SNVH_n_ASIAN <- as.data.frame(SNVH_n[1])
+
+x<-16
+
+for(x in 2:ncol(SNVH_n)){
+  if(match(paste0("TCGA-",colnames(SNVH_n)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(SNVH_n[,x],stingsAsFactors = FALSE)
+    cname<- colnames(SNVH_n)[x]
+    colnames(tempcol) <- cname
+    SNVH_n_AFR <- cbind(SNVH_n_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_n)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVH_n[,x])
+    cname <- colnames(SNVH_n)[x]
+    colnames(tempcol) <- cname
+    SNVH_n_CEU <- cbind(SNVH_n_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_n)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0){
+    tempcol <- as.data.frame(SNVH_n[,x])
+    cname<- colnames(SNVH_n)[x]
+    colnames(tempcol) <- cname
+    SNVH_n_Other <- cbind(SNVH_n_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVH_n)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVH_n[,x])
+    cname <- colnames(SNVH_n)[x]
+    colnames(tempcol) <- cname
+    SNVH_n_ASIAN <- cbind(SNVH_n_ASIAN,tempcol)
+  }
+} 
+
+
+sum(ncol(SNVH_n_AFR),ncol(SNVH_n_CEU),ncol(SNVH_n_ASIAN),ncol(SNVH_n_Other))
+#658 columns = correct number 
+##################Merge races in order######################################
+SNVH_data_short <- cbind(SNVH_n_AFR,SNVH_n_CEU[,2:330],SNVH_n_ASIAN[2:14],SNVH_n_Other[,2:243])
+rownames(SNVH_data_short) <- SNVH_data_short$GENES
+#SNVH_data_short[1:5,1:5]
+SNVH_data_short <-SNVH_data_short[-1]
+write.table(SNVH_data_short,"/Volumes/home/greally-lab/T_Trial/SVNH_Named_ordered.txt",sep = "\t")
+dim(SNVH_data_short)
+#6645 655 - missing 3 samples. Still not sure what happened = SNVH_n(16,359,624)
+#SNVH_n[,15] should be in Other
+
+saveRDS(SNVH_data_short, file ="/Volumes/home/greally-lab/T_Trial/SVNH_Named_ordered.Rds")
+
+#Missing_columns <- which(is.na(match(colnames(SNVH_n)[-1],substr(colnames(SNVH_data_short)[-1],1,7))))
+#match(paste0("TCGA-",colnames(SNVH_n)[624]),META_data$bcr_patient_barcode)
+#Missing Meta data for theses 3 patients! So its all good. We will contindue without them since there is no self identification
+#match(colnames(SNVH_data_short)[-1],colnames(SNVH_n)[-1])
+#pmatch(colnames(SNVH_n)[16],colnames(SNVH_data_short),duplicates.ok = TRUE)
+#colnames(SNVH_data_short)[417]
+#SNVH_n[1:5,1:20]
+#################################################Permuation############################################################
+
+AFR_mean_short = NULL
+CEU_mean_short = NULL
+OTHER_mean_short = NULL
+ASIAN_mean_short = NULL
+
+
+#read in the data each time
+SNVH_data_short <- read.table("/Volumes/home/greally-lab/T_Trial/SVNH_Named_ordered.txt")
+dim(SNVH_data_short)
+SNVH_data_short[1:5,1:5]
+#row.names(SNVH_data_short) <- SNVH_data_short$GENES
+#SNVH_data_short <-SNVH_data_short[-1]
+
+class(SNVH_data_short[,1])
+sum(SNVH_data_short[,2])
+#apply(SNVH_data_short,2,as.numeric(SNVH_data_short))
+#SNVH_data_short[,2] <- as.numeric(levels(SNVH_data_short[,2]))[SNVH_data_short[,2]]
+
+options(stringsAsFactors = F)
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+  #remember to skip the first column it is genes
+    tmp_data = t(apply(SNVH_data_short,1,sample))
+    #class(tmp_data[1,1])
+    #as.numeric(tmp_data[1,1])
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+
+    sub_AFR_mean_short = apply(tmp_data[,1:70],1,mean)
+    sub_CEU_mean_short = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean_short = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean_short = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean_short = cbind(AFR_mean_short, sub_AFR_mean_short)
+    CEU_mean_short = cbind(CEU_mean_short, sub_CEU_mean_short)
+    ASIAN_mean_short = cbind(ASIAN_mean_short,sub_ASIAN_mean_short)
+    OTHER_mean_short = cbind(OTHER_mean_short, sub_OTHER_mean_short)
+}
+
+
+## the result say AFR_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean_short) = paste0("permute",seq(1:1000))
+AFR_mean_short[1:10,1:10]
+rownames(AFR_mean_short) = row.names(SNVH_data_short)
+colnames(CEU_mean_short) = paste0("permute",seq(1:1000))
+CEU_mean[1:10,1:10]
+rownames(CEU_mean_short) = row.names(SNVH_data_short)
+colnames(ASIAN_mean_short) = paste0("permute",seq(1:1000))
+rownames(ASIAN_mean_short) = row.names(SNVH_data_short)
+colnames(OTHER_mean_short) = paste0("permute",seq(1:1000))
+rownames(OTHER_mean_short) = row.names(SNVH_data_short)
+
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean_short = apply(SNVH_data_short[,1:70],1,mean)
+ob_CEU_mean_short = apply(SNVH_data_short[,71:399],1,mean)
+ob_ASIAN_mean_short = apply(SNVH_data_short[,400:412],1,mean)
+ob_OTHER_mean_short = apply(SNVH_data_short[,412:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:6645,function(x)sum(ob_AFR_mean_short[x]<AFR_mean_short[x,])/500)
+p_CEU_enrichment = sapply(1:6645,function(x)sum(ob_CEU_mean_short[x]<CEU_mean_short[x,])/500)
+p_ASIAN_enrichment = sapply(1:6645,function(x)sum(ob_ASIAN_mean_short[x]<ASIAN_mean_short[x,])/500)
+p_OTHER_enrichment = sapply(1:6645,function(x)sum(ob_OTHER_mean_short[x]<OTHER_mean_short[x,])/500)
+
+p_AFR_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+
+SNVH_AFR_enrich_short <- which(p_AFR_enrichment<1/500)
+length(SNVH_AFR_enrich_short)
+#291 gnes of interest
+SNVH_CEU_enrich_short <-which(p_CEU_enrichment<1/500)
+SNVH_ASIAN_enrich_short <-which(p_ASIAN_enrichment<1/500)
+SNVH_OTHER_enrich_short <-which(p_OTHER_enrichment<1/500)
+#SNVH_AFR_enrich_short_genes <- rownames(SNVH_data_short)[which(p_AFR_enrichment<1/500)]
+#SNVH_CEU_enrich_short_genes <- rownames(SNVH_data_short)[which(p_CEU_enrichment<1/500)]
+#SNVH_ASIAN_enrich_short_genes <- rownames(SNVH_data_short)[which(p_ASIAN_enrichment<1/500)]
+#SNVH_OTHER_enrich_short_genes <- rownames(SNVH_data_short)[which(p_OTHER_enrichment<1/500)]
+saveRDS(SNVH_AFR_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/SNVH_AFR_enriched.Rds")
+saveRDS(SNVH_CEU_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/SNVH_CEU_enriched.Rds")
+saveRDS(SNVH_ASIAN_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/SNVH_ASIAN_enriched.Rds")
+saveRDS(SNVH_OTHER_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/SNVH_OTHER_enriched.Rds")
+rownames(SNVH_data_short)[129]
+##############              Save enrichment table####################
+######       SNVH_ethnicity_enrich_short is the row number of significance for that particlar ethnicity##########
+####################### SNVH_n is the named version of the SNVH speicific genees and then it is sub categorized by wether the pt is calling themseves one race or another.
+SNVH_sig_AFR <- SNVH_n_AFR[SNVH_AFR_enrich_short,]
+SNVH_sig_CEU <- SNVH_n_CEU[SNVH_CEU_enrich_short,]
+SNVH_sig_ASIAN <- SNVH_n_ASIAN[SNVH_ASIAN_enrich_short,]
+SNVH_sig_OTHER <- SNVH_n_Other[SNVH_OTHER_enrich_short,]
+
+apply(SNVH_sig_AFR,1,sum)
+which(sapply(SNVH_sig_AFR,is.numeric)==FALSE)
+SNVH_sig_AFR[,46] = sapply(SNVH_sig_AFR[,46], as.double)
+
+dim(SNVH_n_AFR)
+#6645 71(1st column gene names)
+dim(SNVH_sig_AFR)
+#291 71
+rownames(SNVH_sig_AFR) <- SNVH_sig_AFR$GENES
+SNVH_sig_AFR[1:10,1:10]
+SNVH_sig_AFR <- SNVH_sig_AFR[-1]
+#1805 (number of genes of interest for CEU)
+write.table(SNVH_sig_AFR, file = "/Volumes/home/greally-lab/T_Trial/SNVH_p002_AFR.txt", sep = "\t")
+write.table(SNVH_sig_CEU, file = "/Volumes/home/greally-lab/T_Trial/SNVH_p002_CEU.txt", sep = "\t")
+write.table(SNVH_sig_ASIAN, file = "/Volumes/home/greally-lab/T_Trial/SNVH_p002_ASIAN.txt", sep = "\t")
+write.table(SNVH_sig_OTHER, file = "/Volumes/home/greally-lab/T_Trial/SNVH_p002_OTHER.txt", sep = "\t")
+
+apply(SNVH_sig_CEU,1,sum)
+which(sapply(SNVH_sig_CEU,is.numeric)==FALSE)
+
+# let's take a look at the index I set to be enriched in CEU again
+which(p_AFR_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+
+
+##############################Double checking the values of the tables####################################
+############### Variables for table
+SNVH_AFR = read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_AFR.txt")
+SNVH_CEU = read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_CEU.txt")
+SNVH_ASIAN = read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_ASIAN.txt")
+SNVH_OTHER = read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_OTHER.txt")
+
+rownames(SNVH_OTHER) <- SNVH_OTHER$GENES
+
+SNVH_OTHER <- SNVH_OTHER[-1]
+SNVH_OTHER[1:10,1:10]
+
+
+rownames(SNVH_CEU) = SNVH_CEU$GENES
+SNVH_CEU = SNVH_CEU[-1]
+SNVH_CEU[1:10,1:10]
+
+dim(SNVH_n_AFR)
+#6645 71(1st column gene names)
+dim(SNVH_sig_AFR)
+#291 71
+dim(SNVH_CEU)
+#1805 329
+
+#########################Making new table with the statistically significant values###################################################
+SNVH_CEU2plus = which(apply(SNVH_CEU,1,function(x)sum(x)>1))
+length(SNVH_CEU2plus)
+#323
+SNVH_AFR2plus = which(apply(SNVH_AFR,1,function(x)sum(x)>1))
+length(SNVH_AFR2plus)
+#9
+
+which(sapply(SNVH_OTHER,is.numeric)==FALSE)
+#SNVH_AFR[,46] = sapply(SNVH_AFR[,46], as.double)
+
+apply(SNVH_CEU,1,sum)
+#Most of these genes are at 1, but some are 0 I will remove the 0s
+#this method will not work because the row numbers between tables are not the same use the lower mehthod
+SNVH_AFR_CEU_2plus = rbind(SNVH_data_short[SNVH_AFR2plus,1:400],SNVH_data_short[SNVH_CEU2plus,1:400]) 
+dim(SNVH_AFR_CEU_2plus)
+SNVH_AFR_CEU_2plus[1:20,1:20]
+#332 rows! perfect
+#need to double check for duplicates
+####################Making matrix with only gthat show up in at least 3 pts for each group##########################
+rnames_SNVH_AFR = names(which(apply(SNVH_AFR,1,function(x)sum(x)>2)))
+#SNVH_AFR_etab = SNVH_data_short[rnames_SNVH_AFR,1:70]
+#apply(SNVH_AFR_etab,1,sum)
+rnames_SNVH_CEU = names(which(apply(SNVH_CEU,1,function(x)sum(x)>2)))
+rnames_SNVH_ASIAN = names(which(apply(SNVH_ASIAN,1,function(x)sum(x)>2)))
+rnames_SNVH_OTHER = names(which(apply(SNVH_OTHER,1,function(x)sum(x)>2)))
+#rnames matrices give the genes from each ethnicity that are statistically significant and have at least 5 pateitnts with the mutation
+#unique sorted the rnmaes matrices to make sure that there were no dulicates also the names are different bu tht enumbers may be similareso the names are more importatnt
+SNVH_rnames = unique(sort(c(rnames_SNVH_AFR,rnames_SNVH_CEU,rnames_SNVH_ASIAN,rnames_SNVH_OTHER)))
+SNVH_enrich_table =SNVH_data_short[SNVH_rnames,]
+sum(SNVH_enrich_table[4,])
+dim(SNVH_enrich_table)
+#122 654
+#This table is organized by race 1-70 AFR,711-399CEU,400-412 ASIAN, 413-654
+#at least 3pts have the mutations that passed the permutation filter after passign the INDELH filter
+# THis is ordered by ethnicity with AFR followed by 
+write.table(SNVH_enrich_table, file = "/Volumes/home/greally-lab/T_Trial/SNVH_enrichment_table_p002_n3.txt", sep = "\t")
+
+
+```
+SNV Modifier table
+```{r, SNVM}
+##Repeat the seperation  and permutation for each pass type
+SNVM_n<-readRDS("/Volumes/home/greally-lab/T_Trial/SNVMOD_n.Rds")
+SNVM_n[1:5,1:5]
+options(stringsAsFactors = FALSE)
+class(SNVM_n[,5])
+
+SNVM_n_AFR <-as.data.frame(SNVM_n[1])
+SNVM_n_CEU <- as.data.frame(SNVM_n[1])
+SNVM_n_Other <- as.data.frame(SNVM_n[1])
+SNVM_n_ASIAN <- as.data.frame(SNVM_n[1])
+
+x<-16
+
+for(x in 2:ncol(SNVM_n)){
+  if(match(paste0("TCGA-",colnames(SNVM_n)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(SNVM_n[,x],stingsAsFactors = FALSE)
+    cname<- colnames(SNVM_n)[x]
+    colnames(tempcol) <- cname
+    SNVM_n_AFR <- cbind(SNVM_n_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVM_n)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVM_n[,x])
+    cname <- colnames(SNVM_n)[x]
+    colnames(tempcol) <- cname
+    SNVM_n_CEU <- cbind(SNVM_n_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVM_n)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0){
+    tempcol <- as.data.frame(SNVM_n[,x])
+    cname<- colnames(SNVM_n)[x]
+    colnames(tempcol) <- cname
+    SNVM_n_Other <- cbind(SNVM_n_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVM_n)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVM_n[,x])
+    cname <- colnames(SNVM_n)[x]
+    colnames(tempcol) <- cname
+    SNVM_n_ASIAN <- cbind(SNVM_n_ASIAN,tempcol)
+  }
+} 
+SNVM_n[,1]
+dim(SNVM_n_Other)
+dim(AFR_PT)
+SNVM_n_AFR[1:5,]
+sum(ncol(SNVM_n_AFR),ncol(SNVM_n_CEU),ncol(SNVM_n_ASIAN),ncol(SNVM_n_Other))
+#658 columns = same as SNVH
+SNVM_data_short <- cbind(SNVM_n_AFR,SNVM_n_CEU[,2:330],SNVM_n_ASIAN[2:14],SNVM_n_Other[,2:243])
+rownames(SNVM_data_short) <- SNVM_data_short$GENES
+SNVM_data_short[1:5,1:5]
+SNVM_data_short <-SNVM_data_short[-1]
+write.table(SNVM_data_short,"/Volumes/home/greally-lab/T_Trial/SVNM_Named_ordered.txt",sep = "\t")
+dim(SNVM_data_short)
+#38745 654 - missing 3 samples. Still not sure what happened = SNVM_n(16,359,624)
+SNVM_hig=apply(SNVM_data_short,1,function(x)sum(x>0))
+
+
+########################################## Choosing genes >10################################################
+SNVM_SIG = which(SNVM_hig>10)
+Sig_vector <- as.vector(SNVH_SIG)
+SNVM_data <- SNVM_data_short[SNVM_SIG,]
+dim(SNVM_data)
+#15237 654 (cut the number of genes of interest in 1/2)
+write.table(SNVM_data,"/Volumes/home/greally-lab/T_Trial/SNVM_Named_ordered_sig.txt",sep = "\t")
+colnames(SNVM_data_short)[2]
+
+########################################  Determining missing values #############################################
+Missing_columns <- which(is.na(match(colnames(SNVM_n)[-1],substr(colnames(SNVM_data_short),1,7))))
+#The same columns are missing this confirms that the issue is the lack of meta datas not an issue in my code. I could just add the non labeled patients to 
+match(paste0("TCGA-",colnames(SNVM_n)[624]),META_data$bcr_patient_barcode)
+#Missing Meta data for theses 3 patients! So its all good. We will contindue without them since there is no self identification
+match(colnames(SNVM_data_short)[-1],colnames(SNVM_n)[-1])
+pmatch(colnames(SNVM_n)[16],colnames(SNVM_data_short),duplicates.ok = TRUE)
+colnames(SNVM_data_short)[417]
+SNVM_n[1:5,1:20]
+
+
+saveRDS(SNVM_data_short, file ="/Volumes/home/greally-lab/T_Trial/SNVM_Named_ordered.Rds")
+
+# we could see there are few more genes enriched than what I simulated, it could be true enrichment during the simulation,
+# it also could be false positives due to statistical test. But somehow, we detected all the signal I set to be true positives
+# so we can get a list of candidate gene with statsitical significance here.
+
+#################################################Permuation############################################################
+
+AFR_mean = NULL
+CEU_mean = NULL
+OTHER_mean = NULL
+ASIAN_mean = NULL
+
+
+#read in the data each time
+SNVM_data <- read.table("/Volumes/home/greally-lab/T_Trial/SNVM_Named_ordered_short.txt")
+dim(SNVM_data)
+head(SNVM_data)
+#row names already specified
+#row.names(SNVM_data) <- SNVM_data$GENES
+#SNVM_data <-SNVM_data[-1]
+#SNVM_data[,5]
+#rownames(SNVM_data)
+class(SNVM_data[,1])
+sum(SNVM_data[,2])
+#apply(SNVM_data,2,as.numeric(SNVM_data))
+#SNVM_data[,2] <- as.numeric(levels(SNVM_data[,2]))[SNVM_data[,2]]
+
+options(stringsAsFactors = F)
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+  #remember to skip the first column it is genes
+    tmp_data = t(apply(SNVM_data,1,sample))
+    #class(tmp_data[1,1])
+    #as.numeric(tmp_data[1,1])
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+
+    sub_AFR_mean = apply(tmp_data[,1:70],1,mean)
+    sub_CEU_mean = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean = cbind(AFR_mean, sub_AFR_mean)
+    CEU_mean = cbind(CEU_mean, sub_CEU_mean)
+    ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
+    OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
+}
+
+
+## the result say AFR_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+#row names have already been establisthed
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean) = paste0("permute",seq(1:1000))
+AFR_mean[1:10,1:10]
+#rownames(AFR_mean) = row.names(SNVM_data)
+colnames(CEU_mean) = paste0("permute",seq(1:1000))
+CEU_mean[1:10,1:10]
+#rownames(CEU_mean) = row.names(SNVM_data)
+colnames(ASIAN_mean) = paste0("permute",seq(1:1000))
+#rownames(ASIAN_mean) = row.names(SNVM_data)
+colnames(OTHER_mean) = paste0("permute",seq(1:1000))
+#rownames(OTHER_mean) = row.names(SNVM_data)
+
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean = apply(SNVM_data[,1:70],1,mean)
+ob_CEU_mean = apply(SNVM_data[,71:399],1,mean)
+ob_ASIAN_mean = apply(SNVM_data[,400:412],1,mean)
+ob_OTHER_mean = apply(SNVM_data[,412:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:15237,function(x)sum(ob_AFR_mean[x]<AFR_mean[x,])/500)
+p_CEU_enrichment = sapply(1:15237,function(x)sum(ob_CEU_mean[x]<CEU_mean[x,])/500)
+p_ASIAN_enrichment = sapply(1:15237,function(x)sum(ob_ASIAN_mean[x]<ASIAN_mean[x,])/500)
+p_OTHER_enrichment = sapply(1:15237,function(x)sum(ob_OTHER_mean[x]<OTHER_mean[x,])/500)
+
+p_AFR_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+
+SNVM_AFR_enrich <- which(p_AFR_enrichment<1/500)
+length(SNVM_AFR_enrich)
+#291 gnes of interest
+SNVM_CEU_enrich <-which(p_CEU_enrichment<1/500)
+SNVM_ASIAN_enrich <-which(p_ASIAN_enrichment<1/500)
+SNVM_OTHER_enrich <-which(p_OTHER_enrichment<1/500)
+SNVM_AFR_enrich_genes <- rownames(SNVM_data)[which(p_AFR_enrichment<1/500)]
+SNVM_CEU_enrich_genes <- rownames(SNVM_data)[which(p_CEU_enrichment<1/500)]
+SNVM_ASIAN_enrich_genes <- rownames(SNVM_data)[which(p_ASIAN_enrichment<1/500)]
+SNVM_OTHER_enrich_genes <- rownames(SNVM_data)[which(p_OTHER_enrichment<1/500)]
+#saveRDS(SNVM_AFR_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVM_AFR_enriched.Rds")
+#saveRDS(SNVM_CEU_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVM_CEU_enriched.Rds")
+#saveRDS(SNVM_ASIAN_enrich_gen, file = "/Volumes/home/greally-lab/T_Trial/SNVM_ASIAN_enriched.Rds")
+#saveRDS(SNVM_OTHER_enrich, file = "/Volumes/home/greally-lab/T_Trial/SNVM_OTHER_enriched.Rds")
+rownames(SNVM_data)[129]
+##############Save enrichment table####################
+
+SNVM_sig_AFR <- SNVM_n_AFR[SNVM_AFR_enrich,]
+SNVM_sig_CEU <- SNVM_n_CEU[SNVM_CEU_enrich,]
+SNVM_sig_ASIAN <- SNVM_n_ASIAN[SNVM_ASIAN_enrich,]
+SNVM_sig_OTHER <- SNVM_n_Other[SNVM_OTHER_enrich,]
+
+
+dim(SNVM_n_AFR)
+#6645 71(1st column gene names)
+dim(SNVM_sig_AFR)
+rownames(SNVM_sig_AFR) <- SNVM_sig_AFR$GENES
+SNVM_sig_AFR[1:10,1:10]
+SNVM_sig_CEU <- SNVM_sig_AFR[-1]
+#291 (number of genes of interest for CEU)
+write.table(SNVM_sig_AFR, file = "/Volumes/home/greally-lab/T_Trial/SNVM_p002_AFR.txt", sep = "\t")
+write.table(SNVM_sig_CEU, file = "/Volumes/home/greally-lab/T_Trial/SNVM_p002_CEU.txt", sep = "\t")
+write.table(SNVM_sig_ASIAN, file = "/Volumes/home/greally-lab/T_Trial/SNVM_p002_ASIAN.txt", sep = "\t")
+write.table(SNVM_sig_OTHER, file = "/Volumes/home/greally-lab/T_Trial/SNVM_p002_OTHER.txt", sep = "\t")
+
+
+# let's take a look at the index I set to be enriched in CEU again
+which(p_AFR_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+```
+
+```{r, SNVLOW pass}
+##Repeat the seperation  and permutation for each pass type
+SNVL_n<-readRDS("/Volumes/home/greally-lab/T_Trial/SNVLOW_n.Rds")
+SNVL_n[1:5,1:5]
+options(stringsAsFactors = FALSE)
+class(SNVL_n[,5])
+
+SNVL_n_AFR <-as.data.frame(SNVL_n[1])
+SNVL_n_CEU <- as.data.frame(SNVL_n[1])
+SNVL_n_Other <- as.data.frame(SNVL_n[1])
+SNVL_n_ASIAN <- as.data.frame(SNVL_n[1])
+
+x<-16
+
+for(x in 2:ncol(SNVL_n)){
+  if(match(paste0("TCGA-",colnames(SNVL_n)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(SNVL_n[,x],stingsAsFactors = FALSE)
+    cname<- colnames(SNVL_n)[x]
+    colnames(tempcol) <- cname
+    SNVL_n_AFR <- cbind(SNVL_n_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVL_n)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVL_n[,x])
+    cname <- colnames(SNVL_n)[x]
+    colnames(tempcol) <- cname
+    SNVL_n_CEU <- cbind(SNVL_n_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVL_n)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0){
+    tempcol <- as.data.frame(SNVL_n[,x])
+    cname<- colnames(SNVL_n)[x]
+    colnames(tempcol) <- cname
+    SNVL_n_Other <- cbind(SNVL_n_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(SNVL_n)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(SNVL_n[,x])
+    cname <- colnames(SNVL_n)[x]
+    colnames(tempcol) <- cname
+    SNVL_n_ASIAN <- cbind(SNVL_n_ASIAN,tempcol)
+  }
+} 
+SNVL_n[,1]
+dim(SNVL_n_Other)
+dim(AFR_PT)
+SNVL_n_AFR[1:5,]
+sum(ncol(SNVL_n_AFR),ncol(SNVL_n_CEU),ncol(SNVL_n_ASIAN),ncol(SNVL_n_Other))
+#658 columns = same as SNVH
+SNVL_data_short <- cbind(SNVL_n_AFR,SNVL_n_CEU[,2:330],SNVL_n_ASIAN[2:14],SNVL_n_Other[,2:243])
+rownames(SNVL_data_short) <- SNVL_data_short$GENES
+SNVL_data_short[1:5,1:5]
+SNVL_data_short <-SNVL_data_short[-1]
+write.table(SNVL_data_short,"/Volumes/home/greally-lab/T_Trial/SNVL_Named_ordered.txt",sep = "\t")
+dim(SNVL_data_short)
+#14208 654 - missing 3 samples. Still not sure what happened = SNVL_n(16,359,624)
+SNVL_hig = apply(SNVL_data_short,1,function(x)sum(x>0))
+
+
+########################################## Choosing genes >10################################################
+SNVL_SIG = which(SNVL_hig>10)
+Sig_vector <- as.vector(SNVH_SIG)
+SNVL_data <- SNVL_data_short[SNVL_SIG,]
+dim(SNVL_data)
+#930 654 (cut the number of genes of interest by 1/3)
+write.table(SNVL_data,"/Volumes/home/greally-lab/T_Trial/SNVL_Named_ordered_sig.txt",sep = "\t")
+colnames(SNVL_data_short)[1]
+
+########################################  Determining missing values #############################################
+Missing_columns <- which(is.na(match(colnames(SNVL_n)[-1],substr(colnames(SNVL_data_short),1,7))))
+#The same columns are missing this confirms that the issue is the lack of meta datas not an issue in my code. I could just add the non labeled patients to 
+match(paste0("TCGA-",colnames(SNVL_n)[624]),META_data$bcr_patient_barcode)
+#Missing Meta data for theses 3 patients! So its all good. We will contindue without them since there is no self identification
+match(colnames(SNVL_data_short)[-1],colnames(SNVL_n)[-1])
+pmatch(colnames(SNVL_n)[16],colnames(SNVL_data_short),duplicates.ok = TRUE)
+colnames(SNVL_data_short)[417]
+SNVL_n[1:5,1:20]
+
+
+saveRDS(SNVL_data_short, file ="/Volumes/home/greally-lab/T_Trial/SNVL_Named_ordered_sig.Rds")
+
+# we could see there are few more genes enriched than what I simulated, it could be true enrichment during the simulation,
+# it also could be false positives due to statistical test. But somehow, we detected all the signal I set to be true positives
+# so we can get a list of candidate gene with statsitical significance here.
+
+#################################################Permuation############################################################
+
+AFR_mean = NULL
+CEU_mean = NULL
+OTHER_mean = NULL
+ASIAN_mean = NULL
+
+
+#read in the data each time
+SNVL_data <- read.table("/Volumes/home/greally-lab/T_Trial/SNVL_Named_ordered_sig.txt")
+dim(SNVL_data)
+head(SNVL_data)
+#row names already specified
+#row.names(SNVL_data) <- SNVL_data$GENES
+#SNVL_data <-SNVL_data[-1]
+#SNVL_data[,5]
+#rownames(SNVL_data)
+class(SNVL_data[,1])
+sum(SNVL_data[,2])
+#apply(SNVL_data,2,as.numeric(SNVL_data))
+#SNVL_data[,2] <- as.numeric(levels(SNVL_data[,2]))[SNVL_data[,2]]
+
+options(stringsAsFactors = F)
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+  #remember to skip the first column it is genes
+    tmp_data = t(apply(SNVL_data,1,sample))
+    #class(tmp_data[1,1])
+    #as.numeric(tmp_data[1,1])
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+
+    sub_AFR_mean = apply(tmp_data[,1:70],1,mean)
+    sub_CEU_mean = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean = cbind(AFR_mean, sub_AFR_mean)
+    CEU_mean = cbind(CEU_mean, sub_CEU_mean)
+    ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
+    OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
+}
+
+
+## the result say AFR_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+#row names have already been establisthed
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean) = paste0("permute",seq(1:1000))
+AFR_mean[1:10,1:10]
+#rownames(AFR_mean) = row.names(SNVL_data)
+colnames(CEU_mean) = paste0("permute",seq(1:1000))
+CEU_mean[1:10,1:10]
+nrow(AFR_mean)
+#rownames(CEU_mean) = row.names(SNVL_data)
+colnames(ASIAN_mean) = paste0("permute",seq(1:1000))
+#rownames(ASIAN_mean) = row.names(SNVL_data)
+colnames(OTHER_mean) = paste0("permute",seq(1:1000))
+#rownames(OTHER_mean) = row.names(SNVL_data)
+
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean = apply(SNVL_data[,1:70],1,mean)
+ob_CEU_mean = apply(SNVL_data[,71:399],1,mean)
+ob_ASIAN_mean = apply(SNVL_data[,400:412],1,mean)
+ob_OTHER_mean = apply(SNVL_data[,412:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:930,function(x)sum(ob_AFR_mean[x]<AFR_mean[x,])/500)
+p_CEU_enrichment = sapply(1:930,function(x)sum(ob_CEU_mean[x]<CEU_mean[x,])/500)
+p_ASIAN_enrichment = sapply(1:930,function(x)sum(ob_ASIAN_mean[x]<ASIAN_mean[x,])/500)
+p_OTHER_enrichment = sapply(1:930,function(x)sum(ob_OTHER_mean[x]<OTHER_mean[x,])/500)
+
+p_AFR_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+
+SNVL_AFR_enrich <- which(p_AFR_enrichment<1/500)
+sum()
+length(SNVL_AFR_enrich)
+#7 gnes of interest
+SNVL_CEU_enrich <- which(p_CEU_enrichment<1/500)
+#6 genes
+SNVL_ASIAN_enrich <-which(p_ASIAN_enrichment<1/500)
+SNVL_OTHER_enrich <-which(p_OTHER_enrichment<1/500)
+SNVL_AFR_enrich_genes <- rownames(SNVL_data)[which(p_AFR_enrichment<1/500)]
+SNVL_CEU_enrich_genes <- rownames(SNVL_data)[which(p_CEU_enrichment<1/500)]
+SNVL_ASIAN_enrich_genes <- rownames(SNVL_data)[which(p_ASIAN_enrichment<1/500)]
+SNVL_OTHER_enrich_genes <- rownames(SNVL_data)[which(p_OTHER_enrichment<1/500)]
+saveRDS(SNVL_AFR_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVL_AFR_enriched.Rds")
+saveRDS(SNVL_CEU_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVL_CEU_enriched.Rds")
+saveRDS(SNVL_ASIAN_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVL_ASIAN_enriched.Rds")
+saveRDS(SNVL_OTHER_enrich_genes, file = "/Volumes/home/greally-lab/T_Trial/SNVL_OTHER_enriched.Rds")
+rownames(SNVL_data)[129]
+##############Save enrichment table####################
+
+SNVL_sig_AFR <- SNVL_data[SNVL_AFR_enrich,]
+SNVL_sig_CEU <- SNVL_data[SNVL_CEU_enrich,]
+SNVL_sig_ASIAN <- SNVL_data[SNVL_ASIAN_enrich,]
+SNVL_sig_OTHER <- SNVL_data[SNVL_OTHER_enrich,]
+
+SNVL_sig_AFR[1:5,1:5]
+
+dim(SNVL_n_AFR)
+#6645 71(1st column gene names)
+class(SNVL_sig_AFR)
+rownames(SNVL_sig_AFR) <- SNVL_sig_AFR$GENES
+SNVL_sig_AFR[1:5,1:10]
+#SNVL_sig_AFR <- SNVL_sig_AFR[-1]
+#291 (number of genes of interest for CEU)
+
+
+apply(SNVL_sig_AFR,1,sum)
+# Allsignificant!! yay!
+# BBS7  LONRF3    NOX3    ROR1 RUNX1T1    XPO4  ZNF805 
+#    11      11      13      13      11      14      11 
+rownames(SNVL_sig_CEU) <- SNVL_sig_CEU$GENES
+SNVL_sig_CEU[1:5,1:10]
+SNVL_sig_CEU <- SNVL_sig_CEU[-1]
+class(SNVL_sig_CEU)
+apply(SNVL_sig_CEU[-237],1,sum)
+numb = sapply(SNVL_sig_CEU, is.numeric)
+which(numb == FALSE)
+#237
+apply(SNVL_sig_CEU[,71:399],1,sum)
+#KIAA1671   NOTCH1   RSPH6A   SETD1A    SSTR1     WWC3 
+#      12       21       11       12       15       16 
+
+
+#6 329
+SNVL_CEU_tab = as.matrix(SNVL_sig_CEU)
+write.table(SNVL_sig_AFR, file = "/Volumes/home/greally-lab/T_Trial/SNVL_p002_AFR.txt", sep = "\t")
+write.table(SNVL_sig_CEU, file = "/Volumes/home/greally-lab/T_Trial/SNVL_p002_CEU.txt", sep = "\t")
+write.table(SNVL_sig_ASIAN, file = "/Volumes/home/greally-lab/T_Trial/SNVL_p002_ASIAN.txt", sep = "\t")
+write.table(SNVL_sig_OTHER, file = "/Volumes/home/greally-lab/T_Trial/SNVL_p002_OTHER.txt", sep = "\t")
+
+
+# let's take a look at the index I set to be enriched in CEU again
+which(p_AFR_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+```
+
+```{r, INDEL Portion}
+###Choosing only the significant genes## 
+#HIGH_SIG=apply(SNVH_data,1,function(x)sum(x>0))
+#SNVH_SIG = which(HIGH_SIG>10)
+#Sig_vector <- as.vector(INDELH_SIG)
+#INDELH_sig_table <- apply(INDELH_data,1,function(x)sum)
+#relized that I already have tables that are only the genes of insterest fo each filter set
+#################################Re-run with small talbes#####################################
+############################################Race Stratification#####################################################
+INDELH_n<-readRDS("/Volumes/home/greally-lab/T_Trial/INDELHIGH_n.Rds")
+INDELH_n[1:5,1:5]
+options(stringsAsFactors = FALSE)
+class(INDELH_n[,5])
+
+INDELH_n_AFR <-as.data.frame(INDELH_n[1])
+INDELH_n_CEU <- as.data.frame(INDELH_n[1])
+INDELH_n_Other <- as.data.frame(INDELH_n[1])
+INDELH_n_ASIAN <- as.data.frame(INDELH_n[1])
+
+x<-16
+
+for(x in 2:ncol(INDELH_n)){
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(INDELH_n[,x],stingsAsFactors = FALSE)
+    cname<- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_AFR <- cbind(INDELH_n_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname <- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_CEU <- cbind(INDELH_n_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname<- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_Other <- cbind(INDELH_n_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname <- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_ASIAN <- cbind(INDELH_n_ASIAN,tempcol)
+  }
+} 
+INDELH_n[,1]
+dim(INDELH_n_Other)
+dim(AFR_PT)
+INDELH_n_AFR[1:5,]
+sum(ncol(INDELH_n_AFR),ncol(INDELH_n_CEU),ncol(INDELH_n_ASIAN),ncol(INDELH_n_Other))
+#658 columns = correct number 
+INDELH_data_short <- cbind(INDELH_n_AFR,INDELH_n_CEU[,2:330],INDELH_n_ASIAN[2:14],INDELH_n_Other[,2:243])
+rownames(INDELH_data_short) <- INDELH_data_short$GENES
+INDELH_data_short[1:5,1:5]
+INDELH_data_short <-INDELH_data_short[-1]
+write.table(INDELH_data_short,"/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.txt",sep = "\t")
+dim(INDELH_data_short)
+#6645 654 - missing 3 samples. Still not sure what happened = INDELH_n(16,359,624)
+
+colnames(INDELH_data_short)[417]
+INDELH_n[1:5,1:20]
+
+
+saveRDS(INDELH_data_short, file ="/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.Rds")
+
+# we could see there are few more genes enriched than what I simulated, it could be true enrichment during the simulation,
+# it also could be false positives due to statistical test. But somehow, we detected all the signal I set to be true positives
+# so we can get a list of candidate gene with statsitical significance here.
+########################################## Choosing genes >10################################################
+INDELH_hig = apply(INDELH_data_short,1,function(x)sum(x>0))
+INDELH_SIG = which(INDELH_hig>5)
+Sig_vector <- as.vector(INDELH_SIG)
+INDELH_data <- INDELH_data_short[INDELH_SIG,]
+dim(INDELH_data)
+#706 654 (cut the number of genes of interest by 1/3)
+write.table(INDELH_data,"/Volumes/home/greally-lab/T_Trial/INDELH_Named_ordered_sig.txt",sep = "\t")
+colnames(INDELH_data)[1]
+#################################################Permuation############################################################
+numb = sapply(INDELH_data, is.numeric)
+which(numb == FALSE)
+
+
+
+AFR_mean = NULL
+CEU_mean = NULL
+OTHER_mean = NULL
+ASIAN_mean = NULL
+
+
+#read in the data each time
+INDELH_data <- read.table("/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.txt")
+dim(INDELH_data)
+head(INDELH_data)
+row.names(INDELH_data) <- INDELH_data$GENES
+INDELH_data <-INDELH_data[-1]
+#INDELH_data[,5]
+#rownames(INDELH_data)
+class(INDELH_data[,2])
+sum(INDELH_data[,2])
+#apply(INDELH_data,2,as.numeric(INDELH_data))
+#INDELH_data[,2] <- as.numeric(levels(INDELH_data[,2]))[INDELH_data[,2]]
+
+
+
+options(stringsAsFactors = F)
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+  #remember to skip the first column it is genes
+    tmp_data = t(apply(INDELH_data,1,sample))
+    #class(tmp_data[1,1])
+    #as.numeric(tmp_data[1,1])
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+
+    sub_AFR_mean = apply(tmp_data[,1:70],1,mean)
+    sub_CEU_mean = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean = cbind(AFR_mean, sub_AFR_mean)
+    CEU_mean = cbind(CEU_mean, sub_CEU_mean)
+    ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
+    OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
+}
+
+
+## the result say AFR_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean_short) = paste0("permute",seq(1:1042))
+AFR_mean_short[1:10,1:10]
+rownames(AFR_mean_short) = row.names(INDELH_data_short)
+colnames(CEU_mean_short) = paste0("permute",seq(1:1042))
+CEU_mean_short[1:10,1:10]
+rownames(CEU_mean_short) = row.names(INDELH_data_short)
+colnames(ASIAN_mean_short) = paste0("permute",seq(1:1042))
+rownames(ASIAN_mean_short) = row.names(INDELH_data_short)
+colnames(OTHER_mean_short) = paste0("permute",seq(1:1042))
+rownames(OTHER_mean_short) = row.names(INDELH_data_short)
+dim(CEU_mean_short)
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean_short = apply(INDELH_data_short[,1:70],1,mean)
+ob_CEU_mean_short = apply(INDELH_data_short[,71:399],1,mean)
+ob_ASIAN_mean_short = apply(INDELH_data_short[,400:412],1,mean)
+ob_OTHER_mean_short = apply(INDELH_data_short[,413:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:7221,function(x)sum(ob_AFR_mean_short[x]<AFR_mean_short[x,])/500)
+p_CEU_enrichment = sapply(1:7221,function(x)sum(ob_CEU_mean_short[x]<CEU_mean_short[x,])/500)
+p_ASIAN_enrichment = sapply(1:7221,function(x)sum(ob_ASIAN_mean_short[x]<ASIAN_mean_short[x,])/500)
+p_OTHER_enrichment = sapply(1:7221,function(x)sum(ob_OTHER_mean_short[x]<OTHER_mean_short[x,])/500)
+
+p_AFR_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+
+INDELH_AFR_enrich_short <- which(p_AFR_enrichment<1/500)
+length(INDELH_AFR_enrich_short)
+#291 gnes of interest
+INDELH_CEU_enrich_short <-which(p_CEU_enrichment<1/500)
+INDELH_ASIAN_enrich_short <-which(p_ASIAN_enrichment<1/500)
+INDELH_OTHER_enrich_short <-which(p_OTHER_enrichment<1/500)
+INDELH_AFR_enrich_short_genes <- rownames(INDELH_data_short)[which(p_AFR_enrichment<1/500)]
+INDELH_CEU_enrich_short_genes <- rownames(INDELH_data_short)[which(p_CEU_enrichment<1/500)]
+INDELH_ASIAN_enrich_short_genes <- rownames(INDELH_data_short)[which(p_ASIAN_enrichment<1/500)]
+INDELH_OTHER_enrich_short_genes <- rownames(INDELH_data_short)[which(p_OTHER_enrichment<1/500)]
+saveRDS(INDELH_AFR_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_AFR_enriched.Rds")
+saveRDS(INDELH_CEU_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_CEU_enriched.Rds")
+saveRDS(INDELH_ASIAN_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_ASIAN_enriched.Rds")
+saveRDS(INDELH_OTHER_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_OTHER_enriched.Rds")
+rownames(INDELH_data_short)[129]
+########################################Save enrichment table#######################################################
+
+INDELH_sig_AFR <- INDELH_data_short[INDELH_AFR_enrich_short,]
+INDELH_sig_CEU <- INDELH_data_short[INDELH_CEU_enrich_short,]
+INDELH_sig_ASIAN <- INDELH_data_short[INDELH_ASIAN_enrich_short,]
+INDELH_sig_OTHER <- INDELH_data_short[INDELH_OTHER_enrich_short,]
+
+apply(INDELH_sig_AFR,1,sum)
+apply(INDELH_sig_CEU,1,sum)
+which(sapply(INDELH_sig_CEU,is.numeric)==FALSE)
+#INDELH_sig_AFR[,46] = sapply(INDELH_sig_AFR[,46], as.double)
+
+dim(INDELH_n_AFR)
+#6645 71(1st column gene names)
+dim(INDELH_sig_AFR)
+#433 654
+
+
+####################Making matrix with only gthat show up in at least 5 pts for each group##########################
+rnames_AFR = names(which(apply(INDELH_sig_AFR,1,function(x)sum(x)>5)))
+INDELH_AFR_etab = INDELH_data_short[rnames_AFR,1:70]
+apply(INDELH_AFR_etab,1,sum)
+rnames_CEU = names(which(apply(INDELH_sig_CEU,1,function(x)sum(x)>5)))
+rnames_ASIAN = names(which(apply(INDELH_sig_ASIAN,1,function(x)sum(x)>5)))
+rnames_OTHER = names(which(apply(INDELH_sig_OTHER,1,function(x)sum(x)>5)))
+#rnames matrices give the genes from each ethnicity that are statistically significant and have at least 5 pateitnts with the mutation
+#unique sorted the rnmaes matrices to make sure that there were no dulicates also the names are different bu tht enumbers may be similareso the names are more importatnt
+
+INDELH_rnames = unique(sort(c(rnames_AFR,rnames_CEU,rnames_ASIAN,rnames_OTHER)))
+INDELH_enrich_table = INDELH_data_short[INDELH_rnames,]
+sum(INDELH_enrich_table[1,])
+#6  which is ABCA6 which was significant in CEU INDEL_high so it is also high
+#This table is organized by race 1-70 AFR,711-399CEU,400-412 ASIAN, 413-654
+#at least 5pts have the mutations that passed the permutation filter after passign the INDELH filter
+# THis is ordered by ethnicity with AFR followed by 
+write.table(INDELH_enrich_table, file = "/Volumes/home/greally-lab/T_Trial/INDEL_enrichment_table_p002_n5.txt", sep = "\t")
+
+#rownames(INDELH_sig_AFR) <- INDELH_sig_AFR$GENES
+INDELH_data_short[1:10,1:10]
+#INDELH_sig_AFR <- INDELH_sig_AFR[-1]
+#1805 (number of genes of interest for CEU)
+write.table(INDELH_sig_AFR, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_AFR.txt", sep = "\t")
+write.table(INDELH_sig_CEU, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_CEU.txt", sep = "\t")
+write.table(INDELH_sig_ASIAN, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_ASIAN.txt", sep = "\t")
+write.table(INDELH_sig_OTHER, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_OTHER.txt", sep = "\t")
+
+apply(INDELH_sig_CEU,1,sum)
+#which(sapply(INDELH_sig_CEU,is.numeric)==FALSE)
+
+# let's take a look at the index I set to be enriched in CEU again
+which(p_AFR_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+
+
+##############################Double checking the values of the tables####################################
+
+INDELH_AFR = read.table("/Volumes/home/greally-lab/T_Trial/INDELH_p002_AFR.txt")
+INDELH_CEU = read.table("/Volumes/home/greally-lab/T_Trial/INDELH_p002_CEU.txt")
+ 
+rownames(INDELH_AFR) <- INDELH_AFR$GENES
+INDELH_AFR <- INDELH_AFR[-1]
+INDELH_AFR[1:10,1:10]
+
+
+rownames(INDELH_CEU) = INDELH_CEU$GENES
+INDELH_CEU = INDELH_CEU[-1]
+INDELH_CEU[1:10,1:10]
+
+dim(INDELH_n_AFR)
+#6645 71(1st column gene names)
+dim(INDELH_sig_AFR)
+#291 71
+dim(INDELH_CEU)
+#1805 329
+
+#################Making new table with the statistically significant values###################################################
 
 ```
 
+```{r}
+############################################Race Stratification#####################################################
+INDELH_n<-readRDS("/Volumes/home/greally-lab/T_Trial/INDELHIGH_n.Rds")
+INDELH_n[1:5,1:5]
+options(stringsAsFactors = FALSE)
+class(INDELH_n[,5])
+
+INDELH_n_AFR <-as.data.frame(INDELH_n[1])
+INDELH_n_CEU <- as.data.frame(INDELH_n[1])
+INDELH_n_Other <- as.data.frame(INDELH_n[1])
+INDELH_n_ASIAN <- as.data.frame(INDELH_n[1])
+
+x<-16
+
+for(x in 2:ncol(INDELH_n)){
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),AFR_PT$bcr_patient_barcode, nomatch = 0) > 0){
+    tempcol <- as.data.frame(INDELH_n[,x],stingsAsFactors = FALSE)
+    cname<- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_AFR <- cbind(INDELH_n_AFR,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),CEU_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname <- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_CEU <- cbind(INDELH_n_CEU,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),Other_PT$bcr_patient_barcode,nomatch = 0) >0){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname<- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_Other <- cbind(INDELH_n_Other,tempcol)
+  }
+  if(match(paste0("TCGA-",colnames(INDELH_n)[x]),ASIAN_PT$bcr_patient_barcode,nomatch = 0) >0 ){
+    tempcol <- as.data.frame(INDELH_n[,x])
+    cname <- colnames(INDELH_n)[x]
+    colnames(tempcol) <- cname
+    INDELH_n_ASIAN <- cbind(INDELH_n_ASIAN,tempcol)
+  }
+} 
+INDELH_n[,1]
+dim(INDELH_n_Other)
+dim(AFR_PT)
+INDELH_n_AFR[1:5,]
+sum(ncol(INDELH_n_AFR),ncol(INDELH_n_CEU),ncol(INDELH_n_ASIAN),ncol(INDELH_n_Other))
+#658 columns = correct number 
+INDELH_data_short <- cbind(INDELH_n_AFR,INDELH_n_CEU[,2:330],INDELH_n_ASIAN[2:14],INDELH_n_Other[,2:243])
+rownames(INDELH_data_short) <- INDELH_data_short$GENES
+INDELH_data_short[1:5,1:5]
+INDELH_data_short <-INDELH_data_short[-1]
+write.table(INDELH_data_short,"/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.txt",sep = "\t")
+dim(INDELH_data_short)
+#6645 654 - missing 3 samples. Still not sure what happened = INDELH_n(16,359,624)
+
+colnames(INDELH_data_short)[417]
+INDELH_n[1:5,1:20]
+
+
+saveRDS(INDELH_data_short, file ="/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.Rds")
+
+# we could see there are few more genes enriched than what I simulated, it could be true enrichment during the simulation,
+# it also could be false positives due to statistical test. But somehow, we detected all the signal I set to be true positives
+# so we can get a list of candidate gene with statsitical significance here.
+########################################## Choosing genes >10################################################
+INDELH_hig = apply(INDELH_data_short,1,function(x)sum(x>0))
+INDELH_SIG = which(INDELH_hig>5)
+Sig_vector <- as.vector(INDELH_SIG)
+INDELH_data <- INDELH_data_short[INDELH_SIG,]
+dim(INDELH_data)
+#706 654 (cut the number of genes of interest by 1/3)
+write.table(INDELH_data,"/Volumes/home/greally-lab/T_Trial/INDELH_Named_ordered_sig.txt",sep = "\t")
+colnames(INDELH_data)[1]
+#################################################Permuation############################################################
+numb = sapply(INDELH_data, is.numeric)
+which(numb == FALSE)
+
+
+
+AFR_mean = NULL
+CEU_mean = NULL
+OTHER_mean = NULL
+ASIAN_mean = NULL
+
+
+#read in the data each time
+INDELH_data <- read.table("/Volumes/home/greally-lab/T_Trial/INDELHIGH_Named_ordered.txt")
+dim(INDELH_data)
+head(INDELH_data)
+row.names(INDELH_data) <- INDELH_data$GENES
+INDELH_data <-INDELH_data[-1]
+#INDELH_data[,5]
+#rownames(INDELH_data)
+class(INDELH_data[,2])
+sum(INDELH_data[,2])
+#apply(INDELH_data,2,as.numeric(INDELH_data))
+#INDELH_data[,2] <- as.numeric(levels(INDELH_data[,2]))[INDELH_data[,2]]
+
+
+
+options(stringsAsFactors = F)
+set.seed(1)
+for (i in 1:1000){
+    if(i%%100==0) print(i)
+  #remember to skip the first column it is genes
+    tmp_data = t(apply(INDELH_data,1,sample))
+    #class(tmp_data[1,1])
+    #as.numeric(tmp_data[1,1])
+    # here instead of collect the permuated data everytime,
+    # we will only collect statistical values to save memory
+    # we will collect median/mean of number of SNVs in that gene
+    # in each population (or other values you are interested in) 
+
+    sub_AFR_mean = apply(tmp_data[,1:70],1,mean)
+    sub_CEU_mean = apply(tmp_data[,71:399],1,mean)
+    sub_ASIAN_mean = apply(tmp_data[,400:412],1,mean)
+    sub_OTHER_mean = apply(tmp_data[,413:654],1,mean)
+    ###Testing to see some sample sums
+    #sum(sub_ASIAN_mean) 23 .02066
+    #sum(sub_ASIAN_mean) = 25
+    #sum(sub_CEU_mean) = 23.21429
+    
+    AFR_mean = cbind(AFR_mean, sub_AFR_mean)
+    CEU_mean = cbind(CEU_mean, sub_CEU_mean)
+    ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
+    OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
+}
+
+
+## the result say AFR_mean
+## each column is the statistics from one permutation, each row is the sampled distribution of randomness
+# Commented out the row names becase we care about the gene names
+colnames(AFR_mean_short) = paste0("permute",seq(1:1042))
+AFR_mean_short[1:10,1:10]
+rownames(AFR_mean_short) = row.names(INDELH_data_short)
+colnames(CEU_mean_short) = paste0("permute",seq(1:1042))
+CEU_mean_short[1:10,1:10]
+rownames(CEU_mean_short) = row.names(INDELH_data_short)
+colnames(ASIAN_mean_short) = paste0("permute",seq(1:1042))
+rownames(ASIAN_mean_short) = row.names(INDELH_data_short)
+colnames(OTHER_mean_short) = paste0("permute",seq(1:1042))
+rownames(OTHER_mean_short) = row.names(INDELH_data_short)
+dim(CEU_mean_short)
+
+### next we gonna compute the observation statistics we have
+ob_AFR_mean_short = apply(INDELH_data_short[,1:70],1,mean)
+ob_CEU_mean_short = apply(INDELH_data_short[,71:399],1,mean)
+ob_ASIAN_mean_short = apply(INDELH_data_short[,400:412],1,mean)
+ob_OTHER_mean_short = apply(INDELH_data_short[,413:654],1,mean)
+
+### so we can compute the p value now
+p_AFR_enrichment = sapply(1:7221,function(x)sum(ob_AFR_mean_short[x]<AFR_mean_short[x,])/500)
+p_CEU_enrichment = sapply(1:7221,function(x)sum(ob_CEU_mean_short[x]<CEU_mean_short[x,])/500)
+p_ASIAN_enrichment = sapply(1:7221,function(x)sum(ob_ASIAN_mean_short[x]<ASIAN_mean_short[x,])/500)
+p_OTHER_enrichment = sapply(1:7221,function(x)sum(ob_OTHER_mean_short[x]<OTHER_mean_short[x,])/500)
+
+p_AFR_enrichment[1:20]
+# we will see if where the enrichment are, you can set your sinificant level, 
+# here I will use 1 out of 500
+
+INDELH_AFR_enrich_short <- which(p_AFR_enrichment<1/500)
+length(INDELH_AFR_enrich_short)
+#291 gnes of interest
+INDELH_CEU_enrich_short <-which(p_CEU_enrichment<1/500)
+INDELH_ASIAN_enrich_short <-which(p_ASIAN_enrichment<1/500)
+INDELH_OTHER_enrich_short <-which(p_OTHER_enrichment<1/500)
+INDELH_AFR_enrich_short_genes <- rownames(INDELH_data_short)[which(p_AFR_enrichment<1/500)]
+INDELH_CEU_enrich_short_genes <- rownames(INDELH_data_short)[which(p_CEU_enrichment<1/500)]
+INDELH_ASIAN_enrich_short_genes <- rownames(INDELH_data_short)[which(p_ASIAN_enrichment<1/500)]
+INDELH_OTHER_enrich_short_genes <- rownames(INDELH_data_short)[which(p_OTHER_enrichment<1/500)]
+saveRDS(INDELH_AFR_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_AFR_enriched.Rds")
+saveRDS(INDELH_CEU_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_CEU_enriched.Rds")
+saveRDS(INDELH_ASIAN_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_ASIAN_enriched.Rds")
+saveRDS(INDELH_OTHER_enrich_short, file = "/Volumes/home/greally-lab/T_Trial/INDELH_OTHER_enriched.Rds")
+rownames(INDELH_data_short)[129]
+########################################Save enrichment table#######################################################
+
+INDELH_sig_AFR <- INDELH_data_short[INDELH_AFR_enrich_short,]
+INDELH_sig_CEU <- INDELH_data_short[INDELH_CEU_enrich_short,]
+INDELH_sig_ASIAN <- INDELH_data_short[INDELH_ASIAN_enrich_short,]
+INDELH_sig_OTHER <- INDELH_data_short[INDELH_OTHER_enrich_short,]
+
+apply(INDELH_sig_AFR,1,sum)
+apply(INDELH_sig_CEU,1,sum)
+which(sapply(INDELH_sig_CEU,is.numeric)==FALSE)
+#INDELH_sig_AFR[,46] = sapply(INDELH_sig_AFR[,46], as.double)
+
+dim(INDELH_n_AFR)
+#6645 71(1st column gene names)
+dim(INDELH_sig_AFR)
+#433 654
+
+
+####################Making matrix with only gthat show up in at least 5 pts for each group##########################
+rnames_AFR = names(which(apply(INDELH_sig_AFR,1,function(x)sum(x)>5)))
+INDELH_AFR_etab = INDELH_data_short[rnames_AFR,1:70]
+apply(INDELH_AFR_etab,1,sum)
+rnames_CEU = names(which(apply(INDELH_sig_CEU,1,function(x)sum(x)>5)))
+rnames_ASIAN = names(which(apply(INDELH_sig_ASIAN,1,function(x)sum(x)>5)))
+rnames_OTHER = names(which(apply(INDELH_sig_OTHER,1,function(x)sum(x)>5)))
+#rnames matrices give the genes from each ethnicity that are statistically significant and have at least 5 pateitnts with the mutation
+#unique sorted the rnmaes matrices to make sure that there were no dulicates also the names are different bu tht enumbers may be similareso the names are more importatnt
+
+INDELH_rnames = unique(sort(c(rnames_AFR,rnames_CEU,rnames_ASIAN,rnames_OTHER)))
+INDELH_enrich_table = INDELH_data_short[INDELH_rnames,]
+sum(INDELH_enrich_table[1,])
+#6  which is ABCA6 which was significant in CEU INDEL_high so it is also high
+#This table is organized by race 1-70 AFR,711-399CEU,400-412 ASIAN, 413-654
+#at least 5pts have the mutations that passed the permutation filter after passign the INDELH filter
+# THis is ordered by ethnicity with AFR followed by 
+write.table(INDELH_enrich_table, file = "/Volumes/home/greally-lab/T_Trial/INDEL_enrichment_table_p002_n5.txt", sep = "\t")
+
+#rownames(INDELH_sig_AFR) <- INDELH_sig_AFR$GENES
+INDELH_data_short[1:10,1:10]
+#INDELH_sig_AFR <- INDELH_sig_AFR[-1]
+#1805 (number of genes of interest for CEU)
+write.table(INDELH_sig_AFR, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_AFR.txt", sep = "\t")
+write.table(INDELH_sig_CEU, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_CEU.txt", sep = "\t")
+write.table(INDELH_sig_ASIAN, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_ASIAN.txt", sep = "\t")
+write.table(INDELH_sig_OTHER, file = "/Volumes/home/greally-lab/T_Trial/INDELH_p002_OTHER.txt", sep = "\t")
+
+apply(INDELH_sig_CEU,1,sum)
+#which(sapply(INDELH_sig_CEU,is.numeric)==FALSE)
+
+# let's take a look at the index I set to be enriched in CEU again
+which(p_AFR_enrichment<1/500)
+which(p_OTHER_enrichment<1/500)
+
+
+##############################Double checking the values of the tables####################################
+
+INDELH_AFR = read.table("/Volumes/home/greally-lab/T_Trial/INDELH_p002_AFR.txt")
+INDELH_CEU = read.table("/Volumes/home/greally-lab/T_Trial/INDELH_p002_CEU.txt")
+ 
+rownames(INDELH_AFR) <- INDELH_AFR$GENES
+INDELH_AFR <- INDELH_AFR[-1]
+INDELH_AFR[1:10,1:10]
+
+
+rownames(INDELH_CEU) = INDELH_CEU$GENES
+INDELH_CEU = INDELH_CEU[-1]
+INDELH_CEU[1:10,1:10]
+
+dim(INDELH_n_AFR)
+#6645 71(1st column gene names)
+dim(INDELH_sig_AFR)
+#291 71
+dim(INDELH_CEU)
+#1805 329
+
+#################Making new table with the statistically significant values###################################################
+INDELH_CEU2plus = which(apply(INDELH_CEU,1,function(x)sum(x)>1))
+length(INDELH_CEU2plus)
+#323
+INDELH_AFR2plus = which(apply(INDELH_AFR,1,function(x)sum(x)>1))
+length(INDELH_AFR2plus)
+#9
+
+#which(sapply(INDELH_AFR,is.numeric)==FALSE)
+#INDELH_AFR[,46] = sapply(INDELH_AFR[,46], as.double)
+
+apply(INDELH_CEU,1,sum)
+#Most of these genes are at 1, but some are 0 I will remove the 0s
+
+INDELH_AFR_CEU_2plus = rbind(INDELH_data_short[INDELH_AFR2plus,1:399],INDELH_data_short[INDELH_CEU2plus,1:400]) 
+dim(INDELH_AFR_CEU_2plus)
+#332 rows! perfect
+#need to double check for duplicates
+```
+
+
+Plotting one of these graphs
+```{r ONCOPRINT}
+library(ComplexHeatmap)
+#############################LOAD Tables##########################
+SNVH_sig_AFR_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_AFR.txt")
+#SNVL_sig_AFR_tab <- read.table("")
+
+SNVH_sig_CEU_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_CEU.txt")
+SNVH_sig_ASIAN_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_ASIAN.txt")
+SNVH_sig_OTHER_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_OTHER.txt")
+##### New tables seperated by the filters with the groups organized ############################ 
+SNVH_enrich_table <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_enrichment_table_p002_n3.txt")
+INDELH_enrich_table <- read.table("/Volumes/home/greally-lab/T_Trial/INDEL_enrichment_table_p002_n5.txt")
+INDELL_enrich_table <- read.table()
+
+########################## convert tables to matrices ############################
+
+apply(SNVH_sig_AFR_tab,1, sum)
+SNVH_AFR_mat <- as.matrix(SNVH_sig_AFR_tab)
+rownames(SNVH_sig_AFR_tab) <- SNVH_sig_AFR_tab$GENES
+SNVH_sig_AFR_tab <- SNVH_sig_AFR_tab[-1]
+
+
+##########################New tables to use for the plots################################
+
+####################setting up how I the table background##############################
+alter_fun = list(
+   "0" = function(x, y, w, h) {
+        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.5, "mm"), gp = gpar(fill = "#CCCCCC", col = NA))
+    },
+    #SNVLOW = function(x, y, w, h) {
+      #  grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.5, "mm"), gp = gpar(fill = "blue", col = NA))
+  #  },
+    "1" = function(x, y, w, h) {
+        grid.rect(x, y, w-unit(0.5, "mm"), h-unit(0.5, "mm"), gp = gpar(fill = "red", col = NA))
+    },
+    "2" = function(x, y, w, h) {
+        grid.rect(x, y, w-unit(0.5, "mm"), h*0.33, gp = gpar(fill = "#008000", col = NA))
+    }
+)
+#colors for bar plot
+color = c("1" = "red", "SNVLOW" = "blue", "2" = "#008000")
+###########Mapping headt map of SNVH AFR and CEU ############################
+SNVH_AFR_matrix = as.matrix(SNVH_enrich_table[,1:69])
+rownames(SNVH_AFR_matrix) = rownames(SNVH_enrich_table)
+SNVH_CEU_matrix = as.matrix(SNVH_enrich_table[,70:399])
+rownames(SNVH_CEU_matrix) = rownames(SNVH_enrich_table)
+hm_snvhafr = Heatmap(SNVH_AFR_matrix, name = SNV_High_AFR, row_title = "Genes", cluster_rows = FALSE)
+SNVH_Mat_list = SNVH_AFR_matrix + SNVH_CEU_matrix
+
+draw(SNVH_Mat_list, name = "SNV_High_AFR", row_title = "Genes", gap = units(0.1,"cm"), km = 2, cluster_rows = FALSE)
+#Looking to see if there are any mutations that are greater than 1 otherwise an oncoprint of mutation type may be more useful 
+
+class(SNVH_sig_CEU_tab)
+Heatmap(SNVH_AFR_mat, name = "SNVH_African",row_title = "GENES", column_title = "Patients", col = colorRamp2(c(0,1),c("white","red")))
+
+SNVH_sig_CEU_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_CEU.txt",stringsAsFactors = F, sep = "\t")
+SNVH_sig_CEU_tab[1:5,]
+rownames(SNVH_sig_CEU_tab) <- SNVH_sig_CEU_tab$GENES
+SNVH_sig_CEU_tab <- SNVH_sig_CEU_tab[-1]
+
+SNVH_AFR_mat <- as.matrix(SNVH_sig_AFR_tab)
+SNVH_CEU_mat <- as.matrix(SNVH_sig_CEU_tab)
+SNVH_CEU_mat[1:5,1:20]
+SNVH_sig_CEU_tab[1:5,1:20]
+
+
+mat_list = list(SNVH_AFR_mat)
+mat_list_2 = unify_mat_list(mat_list)
+
+oncoPrint(SNVH_AFR_mat, get_type = function(x) strsplit(x,";")[[1]],
+    alter_fun = alter_fun, col = col, 
+    column_title = "CRC SNV High ",
+    heatmap_legend_param = list(title = "Marked race", at = c("0","1","2"), 
+        labels = c("0", "1","2")))
+```
+
+
+
+```{r ONCOPRINT, echo = FALSE, SNVH Low pass}
+library(ComplexHeatmap)
+#############################LOAD Tables##########################
+SNVL_sig_AFR_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVL_p002_AFR.txt")
+SNVH_sig_AFR_tab[1:5,1:20]
+#rownames(SNVH_sig_AFR_tab) <- SNVH_sig_AFR_tab$GENES
+#SNVH_sig_AFR_tab <- SNVH_sig_AFR_tab[-1]
+
+
+SNVH_sig_CEU_tab <- read.table("/Volumes/home/greally-lab/T_Trial/SNVH_p002_CEU.txt")
+SNVH_sig_CEU_tab[1:5,1:20]
+rownames(SNVH_sig_CEU_tab) <- SNVH_sig_CEU_tab$GENES
+SNVH_sig_CEU_tab <- SNVH_sig_CEU_tab[-1]
+
+
+```
 ## Including Plots
 
 You can also embed plots, for example:
 
 ```{r oncoprint, echo=FALSE}
 #Make lists of all the files
-mat_list_snv <- list(snvh_table_f,snvm_table_f,snvl_table_f)
+mat1 <- as.matrix(snvh_table_f)
+mat2 <- as.matrix(snvm_table_f)
+mat3 <- as.matrix(snvl_table_f)
+mat_list_snv <- list(mat1,mat2,mat3)
 mat_list_indel <- list(INDELHIGH_table_f,INDELLow_table_f,INDELMOD_table_f)
 mat_list <- list(snvh_table_f, INDELHIGH_table_f, snvl_table_f, INDELLow_table_f, snvm_table_f, INDELMOD_table_f)
 matlist_high <- list(snvh_table_f, INDELHIGH_table_f)
@@ -87,8 +1609,8 @@ mat_list_snv_uniunify_mat_list(mat_list_snv)
 
 oncoPrint(mat_list_snv,
     alter_fun = list(
-        snv = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.9, gp = gpar(fill = col["snv"], col = NA)),
-        indel = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.4, gp = gpar(fill = col["indel"], col = NA))
+        snv = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.9, gp = gpar(fill = col["snv"], col = NA))
+        #indel = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.4, gp = gpar(fill = col["indel"], col = NA))
     ), col = col)
 ```
 

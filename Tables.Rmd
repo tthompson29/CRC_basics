@@ -454,7 +454,7 @@ dim(snvl_tabl)
 snvl_tabl[which(snvl_tabl[,5]==1),]
 class(snvl_tabl)
 snvl_tabl <- as.data.frame(snvl_tabl)
-saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table.Rds")
+#saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table.Rds")
 saveRDS(snvl_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/snvl_table_full.Rds")
 ```
 #Indel Section_ INDEL_HIGH
@@ -605,7 +605,7 @@ dim(IDL_tabl)
 IDL_tabl[which(IDL_tabl[,5]!=0),]
 class(IDL_tabl)
 #IDL_tabl <- as.data.frame(IDL_tabl)
-saveRDS(IDL_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table.Rds")
+saveRDS(IDL_table, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table.Rds")
 saveRDS(IDL_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table_full.Rds")
 ```
 
@@ -627,8 +627,8 @@ saveRDS(IDL_tabl, file = "/Volumes/home/greally-lab/T_Trial/Tables/IDL_table_ful
      #print(b)
      snvh_tab[match,2] <- b$V1[i]
     }
-    colnames(snvh_tab)[,2] <- "burrito""
-     new_row <- as.matrix(snvh_tab[,"burrito""])
+    colnames(snvh_tab)[,2] <- "burrito"
+     new_row <- as.matrix(snvh_tab[,"burrito"])
      View(new_row)
     
       #for(j in 1:length(match))

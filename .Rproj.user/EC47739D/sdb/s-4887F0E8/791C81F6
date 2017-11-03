@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1508777059002.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "791C81F6",
+    "lastKnownWriteTime" : 5995281764006756358,
+    "last_content_update" : 1508777059002,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "6BDDB35A",
+        "caption" : "SNVH_sig_AFR_tab",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=SNVH_sig_AFR_tab&cache_key=6BDDB35A",
+        "displayedObservations" : 291,
+        "environment" : "",
+        "object" : "SNVH_sig_AFR_tab",
+        "preview" : 0,
+        "totalObservations" : 291,
+        "variables" : 70
+    },
+    "relative_order" : 7,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
