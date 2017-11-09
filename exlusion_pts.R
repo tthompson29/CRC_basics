@@ -11,9 +11,15 @@ for (n in 1:nrow(META_data)){
     familial_tumorPT = rbind(familial_tumorPT,y)
   }
   if (y$synchronous_colon_cancer_present =="YES"){
-    familal_tumorPT = rbind(familial_tumorPT,y)
+    familial_tumorPT = rbind(familial_tumorPT,y)
   }
 }
-dim(familal_tumorPT)
-exclusion_pts = familial_tumorPT$bcr_patient_barcode
-exclusion_pts = gsub("TCGA-","", exclusion_pts)
+dim(familial_tumorPT) # 178 76
+##### Check for duplicates
+exclusion_pts = unique(sort(familial_tumorPT$bcr_patient_barcode))
+length(exclusion_pts) # 89 unique pts that have familial tumors
+
+########exclusion_pts = gsub("TCGA-","", familal_tumorPT$bcr_patient_barcode)
+
+View(exclusion_pts)
+write.table(exclusion_pts,file = "/Volumes/home/greally-lab/T_Trial/Familail_tumor_pts.txt", sep = "\t")

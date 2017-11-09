@@ -41,7 +41,25 @@ Meta_data_READ <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/READ_clinical_in
 META_data<- rbind(Meta_data_COAD,Meta_data_READ)
 dim(META_data)
 
+exclusion_pts <- read.delim("/Volumes/home/greally-lab/T_Trial/Familail_tumor_pts.txt")
+length(exclusion_pts)
+##Removing the familial cases from the meta_data
+META_data_nonfamilial<- as.data.frame(matrix(nrow = 0,ncol = 76))
+colnames(META_data_nonfamilial)<- colnames(META_data)
+META_data_familial <- as.data.frame(matrix(nrow = 0,ncol = 76))
+colnames(META_data_familial)<- colnames(META_data)
+x <- 1
 
+for(x in 1:nrow(META_data)){
+y <- META_data[x,]
+  if(!(y$bcr_patient_barcode %in% exclusion_pts)){
+    META_data_nonfamilial <- rbind(META_data_nonfamilial,y)
+  }
+  else{
+    META_data_familial <- rbind(META_data_familial,y)
+  }
+}
+dim(META_data_nonfamilial)
 write.table(META_data,"/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/CRC_clinical.txt", sep = "\t")
 sum(nrow(Meta_data_COAD),nrow(Meta_data_READ))
 sum(META_data$race_list == "ASIAN")
