@@ -1,6 +1,4 @@
-"0","!(y$bcr_patient_barcode %in% exclusion_pts)
+"0","head(HIS_PT,10)# 10 pts There are definitely 10 distinct patients
 "
-"1","[1]"
-"1"," TRUE"
-"1","
+"2","Error in head(HIS_PT, 10) : object 'HIS_PT' not found
 "

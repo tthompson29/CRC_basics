@@ -1,5 +1,0 @@
-"0","SNVH_n<-readRDS(""/Volumes/home/greally-lab/T_Trial/SNVHIGH_n.Rds"")
-"
-"2","cannot open compressed file '/Volumes/home/greally-lab/T_Trial/SNVHIGH_n.Rds', probable reason 'No such file or directory'"
-"2","Error in gzfile(file, ""rb"") : cannot open the connection
-"

@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1512506671757.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D51DF4AF",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1512506671757,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "F2372D77",
+        "caption" : "W_B_300_AFR",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=W_B_300_AFR&cache_key=F2372D77",
+        "displayedObservations" : 12,
+        "environment" : "",
+        "object" : "W_B_300_AFR",
+        "preview" : 0,
+        "totalObservations" : 12,
+        "variables" : 231
+    },
+    "relative_order" : 10,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

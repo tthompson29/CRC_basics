@@ -1,4 +1,0 @@
-"0","Heatmap(SNVH_enrich_table[,1:399], name = SNV_High_AFR, row_title = ""Genes"", width = units(0.1,""cm""), km = 2, cluster_rows = FALSE)
-"
-"2","Error in units(0.1, ""cm"") : unused argument (""cm"")
-"

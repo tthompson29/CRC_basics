@@ -19,7 +19,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r, Making Subjective ethnicity tables}
+```{r, Subjective ethnicity tables}
 ###               Creating the values for which patients ar which ethnicity 
 snvh_table <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table.Rds")
 snvh_table_f <- readRDS("/Volumes/home/greally-lab/T_Trial/Tables/snvh_table_full.Rds")
@@ -40,7 +40,7 @@ Meta_data_COAD <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/COAD_clinical_in
 Meta_data_READ <- read.csv("/Volumes/home/greally-lab/Taylor_Yu/READ_clinical_info.csv")
 META_data<- rbind(Meta_data_COAD,Meta_data_READ)
 dim(META_data)
-
+#########################removing familial forms of cancer######################
 exclusion_pts <- read.delim("/Volumes/home/greally-lab/T_Trial/Familail_tumor_pts.txt")
 length(exclusion_pts)
 ##Removing the familial cases from the meta_data
@@ -61,6 +61,7 @@ y <- META_data[x,]
 }
 dim(META_data_nonfamilial)
 write.table(META_data,"/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/CRC_clinical.txt", sep = "\t")
+###################Race tables######################
 sum(nrow(Meta_data_COAD),nrow(Meta_data_READ))
 sum(META_data$race_list == "ASIAN")
 PT <- as.data.frame(matrix(nrow = 0,ncol = 76))
@@ -99,9 +100,9 @@ for(x in 1:nrow(META_data)){
   }
 }
 
-head(HIS_PT,10)# 10 pts There are definitely 10 distinct patients
+head(HIS_PT,10)# 5 pts
 sum(META_data$ethnicity =="HISPANIC OR LATINO")# sum = 5 not sure why
-sum(nrow(AFR_PT),nrow(ASIAN_PT),nrow(Other_PT),nrow(CEU_PT))
+sum(nrow(AFR_PT),nrow(ASIAN_PT),nrow(Other_PT),nrow(CEU_PT),nrow(HIS_PT))
 #629 patients = smae as the number of rows in META data
 sum(nrow(META_data))
 sum(nrow(Other_PT))
@@ -112,6 +113,7 @@ sum(META_data$race_list =="")
 #ASAIN = 12 pts + 1 Native American
 #No_race = 255 pts
 write.csv(CEU_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/White_meta_CRC.csv")
+write.csv(HIS_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/Hispanic_meta_CRC.csv")
 dim(CEU_PT) 
 #296 76
 sum(META_data$race_list =="BLACK OR AFRICAN AMERICAN")
@@ -126,7 +128,60 @@ write.csv(ASIAN_PT, file = "/Volumes/home/greally-lab/T_Trial/TCGA_data_CRC/Asia
 dim(ASIAN_PT)
 #13 76
 ```
-Can use the same meta data tables for each Filter set
+
+```{r}
+##########################Meta data numbers for inporatnt information######################
+OB_AFR = read.table("/Volumes/home/greally-lab/T_Trial/OB_AFR_300")
+sum(nrow(OB_AFR))# only 39 patients(these are the observed from the 300 patients)
+OB_EUR = read.table("/Volumes/home/greally-lab/T_Trial/OB_EUR_300")
+sum(nrow(OB_EUR))#199 patients
+sum(OB_EUR$pcolor =="UNK") # 46 of the OB_EUR were unkown
+sum(OB_EUR$pcolor =="EUR")#153 already self identified as CEU/EUR
+sum(OB_EUR$pcolor == "HIS")# 0 none
+META_data$bcr_patient_barcode = as.factor(META_data$bcr_patient_barcode)
+OB_EUR$bcr_patient_barcode = as.factor(OB_EUR$bcr_patient_barcode)
+OB_EUR_short= cbind(OB_EUR[1:4],OB_EUR[15],OB_EUR[16],OB_EUR[20])
+OB_AFR_short= cbind(OB_AFR[1:4],OB_AFR[15],OB_AFR[16],OB_AFR[20])
+View(OB_AFR_short)
+European_super_table = merge(x = OB_EUR_short, y= META_data, by= "bcr_patient_barcode" ,all.x = T, all.y = F) 
+African_super_table = merge(x = OB_AFR_short, y= META_data, by = "bcr_patient_barcode" ,all.x = T, all.y = F) 
+
+str(African_super_table)
+levels(African_super_table$stage_event_pathologic_stage)
+sum(European_super_table$stage_event_pathologic_stage=="Stage IV" | European_super_table$stage_event_pathologic_stage == "Stage IVA" | European_super_table$stage_event_pathologic_stage == "Stage IVB"| European_super_table$stage_event_pathologic_stage == "Stage IVC", na.rm = T)
+sum(European_super_table$stage_event_pathologic_stage == "", na.rm = T)
+levels(European_super_table$stage_event_pathologic_stage)
+
+#EUR_Stage I = 40
+#EUR_stage II = 68
+#EUR_stage III = 63
+#EUR_stage IV = 17
+#EUR_stage unkown = 11
+#AFR_Stage I = 4
+#AFR_stage II = 11
+#AFR_stage III = 16
+#AFR_stage IV = 7
+
+
+#########Tumor location#############
+levels(European_super_table$anatomic_neoplasm_subdivision)
+sum(European_super_table$anatomic_neoplasm_subdivision == "Ascending Colon" | European_super_table$anatomic_neoplasm_subdivision == "Transverse Colon" | European_super_table$anatomic_neoplasm_subdivision == "Hepatic Flexure" | European_super_table$anatomic_neoplasm_subdivision == "Cecum")
+# proximal 88
+
+sum(European_super_table$anatomic_neoplasm_subdivision == "Descending Colon" | European_super_table$anatomic_neoplasm_subdivision == "Sigmoid Colon" | European_super_table$anatomic_neoplasm_subdivision == "Splenic Flexure" | European_super_table$anatomic_neoplasm_subdivision == "Rectum" | European_super_table$anatomic_neoplasm_subdivision == "Rectosigmoid Junction")
+#distal 100
+sum(European_super_table$anatomic_neoplasm_subdivision == "")
+#11 unkown
+
+levels(African_super_table$anatomic_neoplasm_subdivision)
+sum(African_super_table$anatomic_neoplasm_subdivision == "Ascending Colon" | African_super_table$anatomic_neoplasm_subdivision == "Transverse Colon" | African_super_table$anatomic_neoplasm_subdivision == "Hepatic Flexure" | African_super_table$anatomic_neoplasm_subdivision == "Cecum", na.rm = T)
+# proximal 25
+
+sum(African_super_table$anatomic_neoplasm_subdivision == "Descending Colon" | African_super_table$anatomic_neoplasm_subdivision == "Sigmoid Colon" | African_super_table$anatomic_neoplasm_subdivision == "Splenic Flexure" | African_super_table$anatomic_neoplasm_subdivision == "Rectum" | African_super_table$anatomic_neoplasm_subdivision == "Rectosigmoid Junction", na.rm = T)
+#distal 11
+sum(African_super_table$anatomic_neoplasm_subdivision == "", na.rm = T)
+#2 unkown
+```
 
 ```{r, SNVH long version}
 ### Making the subjective seperations for the table
@@ -205,7 +260,7 @@ ncol(SNVH_data)
 ### Name_table is int he renaming .R file may need to move it
 Missing <- as.matrix(!match(1:658,sort(match(name_table_3[,2], colnames(SNVH_data)))))
 options(stringsAsFactors = F)
-#####################################Permuation########################
+#####################################Permuation################################
 
 AFR_mean = NULL
 CEU_mean = NULL
@@ -233,7 +288,6 @@ for (i in 1:1000){
     CEU_mean = cbind(CEU_mean, sub_CEU_mean)
     ASIAN_mean = cbind(ASIAN_mean,sub_ASIAN_mean)
     OTHER_mean = cbind(OTHER_mean, sub_OTHER_mean)
-    
 }
 
 
@@ -331,7 +385,7 @@ for(x in 2:ncol(SNVH_n)){
 sum(ncol(SNVH_n_AFR),ncol(SNVH_n_CEU),ncol(SNVH_n_ASIAN),ncol(SNVH_n_Other))
 #658 columns = correct number 
 ##################Merge races in order######################################
-SNVH_data_short <- cbind(SNVH_n_AFR,SNVH_n_CEU[,2:330],SNVH_n_ASIAN[2:14],SNVH_n_Other[,2:243])
+SNVH_data_short <- cbind(SNVH_n_AFR,SNVH_n_CEU[,2:329],SNVH_n_ASIAN[2:14],SNVH_n_Other[,2:242])
 rownames(SNVH_data_short) <- SNVH_data_short$GENES
 #SNVH_data_short[1:5,1:5]
 SNVH_data_short <-SNVH_data_short[-1]
@@ -358,7 +412,7 @@ ASIAN_mean_short = NULL
 
 
 #read in the data each time
-SNVH_data_short <- read.table("/Volumes/home/greally-lab/T_Trial/SVNH_Named_ordered.txt")
+SNVH_data_short <- read.table(file = "/Volumes/home/greally-lab/T_Trial/SVNH_Named_ordered.txt")
 dim(SNVH_data_short)
 SNVH_data_short[1:5,1:5]
 #row.names(SNVH_data_short) <- SNVH_data_short$GENES

@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1512421276984.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8BF7E7",
+    "lastKnownWriteTime" : -2714986825119618617,
+    "last_content_update" : 1512421276984,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "D62F1DBD",
+        "caption" : "SNVH_n_transposed",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=SNVH_n_transposed&cache_key=D62F1DBD",
+        "displayedObservations" : 658,
+        "environment" : "",
+        "object" : "SNVH_n_transposed",
+        "preview" : 0,
+        "totalObservations" : 658,
+        "variables" : 6646
+    },
+    "relative_order" : 6,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
